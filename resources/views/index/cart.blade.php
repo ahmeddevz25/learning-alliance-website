@@ -88,8 +88,8 @@
                                                                 alt="minus">
                                                         </button>
                                                         <input class="qty-input" type="number" name="quantity"
-                                                            value="{{ $qty }}" min="1" step="1"
-                                                            max="{{ max(1, (int) ($variant->stock ?? 9999)) }}">
+                                                            value="{{ $qty }}" min="1" step="1">
+
                                                         <button type="button" class="qty-btn inc-qty">
                                                             <img src="{{ asset('index/assets/img/icon/plus.svg') }}"
                                                                 alt="plus">
@@ -207,7 +207,6 @@
                     if (totals.length) totals.forEach(el => el.textContent = d.line.line_total);
                     else $$('.product-price', row).forEach(el => el.innerHTML = 'Rs. ' + d.line.line_total);
 
-                    input.max = Math.max(1, parseInt(d.line.stock || 0, 10));
                     input.value = d.line.quantity;
 
                     $('#cart-subtotal') && ($('#cart-subtotal').textContent = d.totals.subtotal);
@@ -326,10 +325,5 @@
             }
         });
     </script>
-
-
-
-
-
     </div>
 @endsection

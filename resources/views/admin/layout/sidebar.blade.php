@@ -179,9 +179,13 @@
                 </ul>
             </li>
         @endcan
-        <li class="menu-item active mt-3">
+
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Cache Clear</span>
+        </li>
+        <li class="menu-item">
             <a href="{{ route('cacheclear') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-home-circle"></i>
+                <i class="menu-icon tf-icons bx bx-refresh"></i>
                 <div data-i18n="Analytics">Cache Clear</div>
             </a>
         </li>

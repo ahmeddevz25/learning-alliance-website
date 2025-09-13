@@ -14,7 +14,8 @@ class ProductSize extends Model
         'product_id',
         'size_id',
         'price',
-        'stock'
+        'stock',
+        'is_active',
     ];
 
     // Define the inverse relationship to Product

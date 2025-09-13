@@ -65,45 +65,56 @@
                                             {{-- Size and Price --}}
                                             <div class="mb-3">
                                                 <label for="sizes" class="form-label">Product Sizes</label>
-                                                <!-- Loop through existing sizes and pre-fill them -->
+
+                                                <!-- Loop through existing sizes -->
                                                 <div id="size-container">
-                                                    @foreach ($selectedSizes as $index => $size)
-                                                        <div class="size-entry mb-3 position-relative">
-                                                            <!-- Select size -->
-                                                            <select name="sizes[{{ $index }}][size]"
-                                                                class="form-control mb-2" required>
-                                                                <option value="" disabled>Select Size</option>
-                                                                @foreach ($sizes as $availableSize)
-                                                                    <option value="{{ $availableSize->id }}"
-                                                                        {{ $size['size_id'] == $availableSize->id ? 'selected' : '' }}>
-                                                                        {{ $availableSize->size }}
-                                                                    </option>
-                                                                @endforeach
-                                                            </select>
+                                                    @foreach ($product->sizes as $index => $size)
+                                                        <div class="size-entry mb-3">
+                                                            <div class="row align-items-end">
+                                                                <!-- Hidden ID -->
+                                                                <input type="hidden" name="sizes[{{ $index }}][id]"
+                                                                    value="{{ $size->id }}">
 
-                                                            <!-- Price input -->
-                                                            <input type="number" name="sizes[{{ $index }}][price]"
-                                                                class="form-control mb-2"
-                                                                value="{{ old('sizes.' . $index . '.price', $size['price']) }}"
-                                                                placeholder="Price (Rs.)" step="0.01" required>
+                                                                <!-- Size Column -->
+                                                                <div class="col-md-5">
+                                                                    <label class="form-label">Size</label>
+                                                                    <select name="sizes[{{ $index }}][size]"
+                                                                        class="form-control" required>
+                                                                        <option value="" disabled>Select Size</option>
+                                                                        @foreach ($sizes as $availableSize)
+                                                                            <option value="{{ $availableSize->id }}"
+                                                                                {{ $size->size_id == $availableSize->id ? 'selected' : '' }}>
+                                                                                {{ $availableSize->size }}
+                                                                            </option>
+                                                                        @endforeach
+                                                                    </select>
+                                                                </div>
 
-                                                            <!-- Stock input -->
-                                                            <input type="number" name="sizes[{{ $index }}][stock]"
-                                                                class="form-control mb-2"
-                                                                value="{{ old('sizes.' . $index . '.stock', $size['stock']) }}"
-                                                                placeholder="Stock Quantity" required>
+                                                                <!-- Price Column -->
+                                                                <div class="col-md-5">
+                                                                    <label class="form-label">Price (Rs.)</label>
+                                                                    <input type="number"
+                                                                        name="sizes[{{ $index }}][price]"
+                                                                        class="form-control" value="{{ $size->price }}"
+                                                                        placeholder="Enter price" step="0.01" required>
+                                                                </div>
 
-                                                            <!-- Cross button to remove size -->
-                                                            <button type="button"
-                                                                class="btn btn-danger btn-sm remove-size-btn"
-                                                                style="position: absolute; right: 5px; top: 5px; display:none;">&times;</button>
+                                                                <!-- Remove -->
+                                                                <div class="col-md-2">
+                                                                    <label class="form-label d-block">&nbsp;</label>
+                                                                    <button type="button"
+                                                                        class="btn btn-outline-danger w-100 remove-size-btn">Remove</button>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     @endforeach
+
                                                 </div>
 
-                                                <button type="button" class="btn btn-primary" id="add-size-btn">Add
+                                                <button type="button" class="btn btn-primary mt-2" id="add-size-btn">Add
                                                     Size</button>
                                             </div>
+
 
 
                                             <!-- Categories -->
@@ -112,60 +123,61 @@
                                                 <div
                                                     style="max-height:250px; overflow-y:auto; border:1px solid #ddd; padding:10px; border-radius:5px;">
                                                     {!! $renderedCategories !!}
-                                            </div>
-
-
-                                            {{-- Description --}}
-                                            <div class="mb-3">
-                                                <label for="desc" class="form-label">Product Description</label>
-                                                <textarea name="desc" id="desc" class="form-control" rows="4">{{ old('desc', $product->desc) }}</textarea>
-                                            </div>
-
-                                            {{-- Existing Images Preview --}}
-                                            @if ($product->images->count())
-                                                <div class="mb-3">
-                                                    <label class="form-label">Existing Images</label>
-                                                    <div class="d-flex flex-wrap gap-2">
-                                                        @foreach ($product->images as $img)
-                                                            <div style="position: relative; display: inline-block;">
-                                                                <img src="{{ asset('storage/' . $img->image_path) }}"
-                                                                    alt="" class="rounded"
-                                                                    style="width: 70px; height: 70px; object-fit: cover; border: 1px solid #ccc;">
-
-                                                                @if ($img->is_primary)
-                                                                    <span
-                                                                        class="badge bg-success position-absolute top-0 start-0 m-1">Primary</span>
-                                                                @endif
-
-                                                                <button type="button"
-                                                                    class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 delete-image-btn"
-                                                                    data-image-id="{{ $img->id }}"
-                                                                    style="padding: 2px 6px; line-height: 1;">&times;</button>
-                                                            </div>
-                                                        @endforeach
-
-                                                    </div>
                                                 </div>
-                                            @endif
 
-                                            {{-- Upload Main Image --}}
-                                            <div class="mb-3">
-                                                <label for="main_image" class="form-label">Select New Main Image</label>
-                                                <input type="file" name="main_image" class="form-control" id="main_image"
-                                                    accept="image/*">
-                                                <small class="text-muted">Optional: this will replace the current main
-                                                    image.</small>
-                                            </div>
 
-                                            {{-- Upload More Images --}}
-                                            <div class="mb-3">
-                                                <label for="images" class="form-label">Upload More Images</label>
-                                                <input type="file" name="images[]" class="form-control" id="images"
-                                                    multiple accept="image/*">
-                                                <small class="text-muted">These will be added as additional images.</small>
-                                            </div>
+                                                {{-- Description --}}
+                                                <div class="mb-3">
+                                                    <label for="desc" class="form-label">Product Description</label>
+                                                    <textarea name="desc" id="desc" class="form-control" rows="4">{{ old('desc', $product->desc) }}</textarea>
+                                                </div>
 
-                                            <button type="submit" class="btn btn-primary">Update Product</button>
+                                                {{-- Existing Images Preview --}}
+                                                @if ($product->images->count())
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Existing Images</label>
+                                                        <div class="d-flex flex-wrap gap-2">
+                                                            @foreach ($product->images as $img)
+                                                                <div style="position: relative; display: inline-block;">
+                                                                    <img src="{{ asset('storage/' . $img->image_path) }}"
+                                                                        alt="" class="rounded"
+                                                                        style="width: 70px; height: 70px; object-fit: cover; border: 1px solid #ccc;">
+
+                                                                    @if ($img->is_primary)
+                                                                        <span
+                                                                            class="badge bg-success position-absolute top-0 start-0 m-1">Primary</span>
+                                                                    @endif
+
+                                                                    <button type="button"
+                                                                        class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 delete-image-btn"
+                                                                        data-image-id="{{ $img->id }}"
+                                                                        style="padding: 2px 6px; line-height: 1;">&times;</button>
+                                                                </div>
+                                                            @endforeach
+
+                                                        </div>
+                                                    </div>
+                                                @endif
+
+                                                {{-- Upload Main Image --}}
+                                                <div class="mb-3">
+                                                    <label for="main_image" class="form-label">Select New Main Image</label>
+                                                    <input type="file" name="main_image" class="form-control"
+                                                        id="main_image" accept="image/*">
+                                                    <small class="text-muted">Optional: this will replace the current main
+                                                        image.</small>
+                                                </div>
+
+                                                {{-- Upload More Images --}}
+                                                <div class="mb-3">
+                                                    <label for="images" class="form-label">Upload More Images</label>
+                                                    <input type="file" name="images[]" class="form-control"
+                                                        id="images" multiple accept="image/*">
+                                                    <small class="text-muted">These will be added as additional
+                                                        images.</small>
+                                                </div>
+
+                                                <button type="submit" class="btn btn-primary">Update Product</button>
                                         </form>
 
 
@@ -223,81 +235,63 @@
         </script>
 
         <script>
-            document.getElementById('add-size-btn').addEventListener('click', function() {
-                var sizeContainer = document.getElementById('size-container');
-                var sizeEntries = sizeContainer.querySelectorAll('.size-entry');
-                var index = sizeEntries.length; // Get the next index to ensure uniqueness
+            document.addEventListener('DOMContentLoaded', function() {
+                const sizeContainer = document.getElementById('size-container');
+                const addSizeBtn = document.getElementById('add-size-btn');
 
-                // Create a new size entry div
-                var newSizeEntry = document.createElement('div');
-                newSizeEntry.classList.add('size-entry', 'mb-3', 'position-relative');
-                newSizeEntry.setAttribute('data-index', index);
+                // Add new size row
+                addSizeBtn.addEventListener('click', function() {
+                    const index = sizeContainer.querySelectorAll('.size-entry').length;
 
-                // Add select element for size
-                var select = document.createElement('select');
-                select.name = `sizes[${index}][size]`;
-                select.classList.add('form-control', 'mb-2');
-                select.setAttribute('required', 'true');
+                    const newSizeEntry = document.createElement('div');
+                    newSizeEntry.classList.add('size-entry', 'mb-3');
 
-                // Add the default option
-                var defaultOption = document.createElement('option');
-                defaultOption.value = '';
-                defaultOption.disabled = true;
-                defaultOption.selected = true;
-                defaultOption.textContent = 'Select Size';
-                select.appendChild(defaultOption);
+                    newSizeEntry.innerHTML = `
+            <div class="row align-items-end">
+                <!-- Size Column -->
+                <div class="col-md-5">
+                    <label class="form-label">Size</label>
+                    <select name="sizes[${index}][size]" class="form-control" required>
+                        <option value="" disabled selected>Select Size</option>
+                        @foreach ($sizes as $size)
+                            <option value="{{ $size->id }}">{{ $size->size }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
-                // Loop through the existing sizes and add options dynamically
-                @foreach ($sizes as $size)
-                    var option = document.createElement('option');
-                    option.value = "{{ $size->id }}";
-                    option.textContent = "{{ $size->size }}";
-                    select.appendChild(option);
-                @endforeach
+                <!-- Price Column -->
+                <div class="col-md-5">
+                    <label class="form-label">Price (Rs.)</label>
+                    <input type="number" name="sizes[${index}][price]"
+                        class="form-control"
+                        placeholder="Enter price"
+                        step="0.01" required>
+                </div>
 
-                // Add price input field
-                var inputPrice = document.createElement('input');
-                inputPrice.type = 'number';
-                inputPrice.name = `sizes[${index}][price]`;
-                inputPrice.classList.add('form-control', 'mb-2');
-                inputPrice.placeholder = 'Price (Rs.)';
-                inputPrice.step = '0.01';
-                inputPrice.required = true;
+                <!-- Remove Column -->
+                <div class="col-md-2">
+                    <label class="form-label d-block">&nbsp;</label>
+                    <button type="button" class="btn btn-outline-danger w-100 remove-size-btn">
+                        Remove
+                    </button>
+                </div>
+            </div>
+        `;
 
-                // Add stock input field
-                var inputStock = document.createElement('input');
-                inputStock.type = 'number';
-                inputStock.name = `sizes[${index}][stock]`;
-                inputStock.classList.add('form-control', 'mb-2');
-                inputStock.placeholder = 'Stock Quantity';
-                inputStock.required = true;
-
-                // Create the remove button (cross icon)
-                var removeBtn = document.createElement('button');
-                removeBtn.type = 'button';
-                removeBtn.classList.add('btn', 'btn-danger', 'btn-sm', 'remove-size-btn');
-                removeBtn.style.position = 'absolute';
-                removeBtn.style.right = '5px';
-                removeBtn.style.top = '5px';
-                removeBtn.style.display = 'block';
-                removeBtn.innerHTML = '&times;'; // Cross icon
-
-                // Add the event listener for the remove button
-                removeBtn.addEventListener('click', function() {
-                    newSizeEntry.remove(); // Remove the size entry when the cross button is clicked
-                    updateSizeOptions(); // Update dropdown options after removal
+                    sizeContainer.appendChild(newSizeEntry);
                 });
 
-                // Append select, price input, stock input, and remove button to the new size entry div
-                newSizeEntry.appendChild(select);
-                newSizeEntry.appendChild(inputPrice);
-                newSizeEntry.appendChild(inputStock);
-                newSizeEntry.appendChild(removeBtn);
-
-                // Append the new size entry to the size container
-                sizeContainer.appendChild(newSizeEntry);
+                // ✅ Single event delegation for ALL remove buttons
+                sizeContainer.addEventListener('click', function(e) {
+                    if (e.target.closest('.remove-size-btn')) {
+                        e.preventDefault();
+                        const entry = e.target.closest('.size-entry');
+                        if (entry) entry.remove();
+                    }
+                });
             });
         </script>
+
 
         <script>
             // Run on any change in a size select dropdown

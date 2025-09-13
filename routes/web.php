@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Index\CartController;
@@ -14,7 +16,6 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ContactMessageController;
 use App\Http\Controllers\Admin\InstructionGuideController;
-
 
 
 Route::get('admin/login', [AdminController::class, 'LoginForm'])->name('login');
@@ -32,19 +33,14 @@ Route::get('size-chart', [IndexController::class, 'size_chart'])->name('SizeChar
 Route::get('contact-us', [IndexController::class, 'contactus'])->name('contactus');
 Route::get('washing-instructions', [IndexController::class, 'washing_instructions'])->name('washingInstructions');
 Route::get('accessories', [IndexController::class, 'accessories'])->name('accessories');
-Route::post('/cart/bulk-add', [IndexController::class, 'bulkAdd'])->name('cart.bulkAdd');
 
 
 Route::get('product/details/{slug}', [IndexController::class, 'product_details'])->name('product.details');
-Route::get('cart/details', [IndexController::class, 'cartdetails'])->name('cartdetails');
-Route::patch('/cart/{cart}/quantity', [IndexController::class, 'ajaxUpdateQuantity'])
-    ->name('cart.quantity');
 
-Route::get('checkout', [IndexController::class, 'checkout'])->name('checkout');
-Route::post('/checkout/place-order', [IndexController::class, 'place'])->name('order.place');
+
+
 Route::get('/thank-you/{order}', [IndexController::class, 'thankyou'])->name('order.thankyou');
 Route::post('/contact', [IndexController::class, 'submit'])->name('contact.submit');
-
 
 // Cart Routes
 Route::get('cart', [CartController::class, 'index'])->name('cart.index'); // Cart page view
@@ -53,7 +49,12 @@ Route::post('cart/update/{id}', [CartController::class, 'update'])->name('cart.u
 Route::delete('/cart/remove/{id}', [CartController::class, 'ajaxRemove'])
     ->name('cart.ajaxRemove');
 
-
+    Route::post('/cart/bulk-add', [CartController::class, 'bulkAdd'])->name('cart.bulkAdd');
+    Route::get('cart/details', [CartController::class, 'cartdetails'])->name('cartdetails');
+    Route::patch('/cart/{cart}/quantity', [CartController::class, 'ajaxUpdateQuantity'])
+    ->name('cart.quantity');
+    Route::get('checkout', [CartController::class, 'checkout'])->name('checkout');
+    Route::post('/checkout/place-order', [CartController::class, 'place'])->name('order.place');
 
 
 Route::middleware(['auth'])->group(function () {
@@ -122,9 +123,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/permissions/edit/{id}', [PermissionController::class, 'edit'])->name('permissions.edit');
     Route::post('/permissions/update/{id}', [PermissionController::class, 'update'])->name('permissions.update');
     Route::get('/permissions/delete/{id}', [PermissionController::class, 'destroy'])->name('permissions.delete');
+
+    Route::get('clear-cache', [AdminController::class, 'cacheclear'])->name('cacheclear');
 });
 
-
+Route::get('clear-cache', [IndexController::class, 'cacheclear'])->name('cacheclear');
 Route::get('/setup-project', function () {
     // Migrate fresh
     Artisan::call('migrate:fresh', [
@@ -231,13 +234,39 @@ Route::get('/insert-data', function () {
     return "✅ Data inserted successfully!";
 });
 
+Route::get('/create-payment-mode-table', function () {
+    if (!Schema::hasTable('payment_modes')) {
+        Schema::create('payment_modes', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->timestamps();
+        });
+        return "✅ payment_modes table created successfully!";
+    }
+    return "⚠️ payment_modes table already exists.";
+});
 
-Route::get('/cache-clear', function () {
-    Artisan::call('config:cache');
-    Artisan::call('route:cache');
-    Artisan::call('view:clear');
-    Artisan::call('cache:clear');
 
-    return "✅ All cache commands executed successfully!";
-})->name('cacheclear');
 
+// Route::get('/create-visitors-table', function () {
+//     try {
+//         Artisan::call('migrate', [
+//             '--path' => 'database/migrations/2025_08_25_095321_create_visitors_table.php',
+//             '--force' => true
+//         ]);
+//         return "✅ Visitors table migration completed successfully!";
+//     } catch (\Exception $e) {
+//         return "❌ Error: " . $e->getMessage();
+//     }
+// });
+
+Route::get('/composer-dump-autoload', function () {
+    try {
+        // Run dump-autoload
+        Artisan::call('dump-autoload');
+
+        return "<pre>" . Artisan::output() . "</pre>";
+    } catch (\Exception $e) {
+        return "❌ Error: " . $e->getMessage();
+    }
+});

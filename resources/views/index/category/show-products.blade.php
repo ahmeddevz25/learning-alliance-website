@@ -128,10 +128,10 @@
                                                         <div class="product-price">Rs. <span
                                                                 data-line-total>{{ number_format($priceForRow, 2) }}</span>
                                                         </div>
-                                                        <small data-stock-note
+                                                        {{-- <small data-stock-note
                                                             class="{{ $inStock > 0 ? 'text-success' : 'text-danger' }}">
                                                             {{ $inStock > 0 ? $inStock . ' in stock' : 'Out of stock' }}
-                                                        </small>
+                                                        </small> --}}
                                                     </td>
                                                     <td>
                                                         <fieldset>
@@ -139,33 +139,28 @@
                                                                 @foreach ($product->sizes as $s)
                                                                     <option value="{{ $s->sizeItem->id }}"
                                                                         data-price="{{ (float) $s->price }}"
-                                                                        data-stock="{{ (int) $s->stock }}"
-                                                                        @selected($firstVariant && $s->id === $firstVariant->id)
-                                                                        @disabled($s->stock <= 0)>
+                                                                        @selected($firstVariant && $s->id === $firstVariant->id)>
                                                                         {{ $s->sizeItem->size }}
-                                                                        {{ $s->stock <= 0 ? '(Out)' : '' }}
                                                                     </option>
                                                                 @endforeach
                                                             </select>
                                                         </fieldset>
                                                     </td>
+
                                                     <td class="cart-item-quantity">
                                                         <div
                                                             class="quantity d-flex align-items-center justify-content-between">
                                                             <button type="button" class="qty-btn dec-qty">−</button>
-                                                            <input type="number" class="qty-input"
-                                                                value="{{ $inStock > 0 ? 1 : 0 }}"
-                                                                min="{{ $inStock > 0 ? 1 : 0 }}"
-                                                                @if ($inStock > 0) max="{{ (int) $inStock }}" @endif
-                                                                {{ $inStock > 0 ? '' : 'disabled' }} style="width:64px;">
+                                                            <input type="number" class="qty-input" value="1"
+                                                                min="1" step="1" style="width:64px;">
                                                             <button type="button" class="qty-btn inc-qty">+</button>
                                                         </div>
                                                     </td>
+
                                                     <td class="text-end">
                                                         <button type="button"
                                                             class="add-to-cart-btn btn btn-primary btn-sm"
-                                                            style="width: 116px;font-size: 14px;"
-                                                            {{ $inStock > 0 ? '' : 'disabled' }}>
+                                                            style="width: 116px;font-size: 14px;">
                                                             Add to Cart
                                                         </button>
                                                     </td>
@@ -191,7 +186,7 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    <script>
+    {{-- <script>
         document.addEventListener('DOMContentLoaded', () => {
             const bulkForm = document.getElementById('bulkForm');
             const table = document.querySelector('.table.align-middle');
@@ -348,7 +343,121 @@
             }, true);
 
         });
+    </script> --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const bulkForm = document.getElementById('bulkForm');
+            const table = document.querySelector('.table.align-middle');
+            const checkAll = document.getElementById('checkAll');
+            const btnSel = document.getElementById('btnAddSelected');
+            const btnAll = document.getElementById('btnAddAll');
+
+            if (!bulkForm || !table) return;
+
+            const clearHidden = () =>
+                bulkForm.querySelectorAll('input[type="hidden"][data-dynamic="1"]').forEach(n => n.remove());
+
+            function injectHiddenForRow(row) {
+                const pid = row.dataset.product;
+                const sel = row.querySelector('.row-size');
+                const qtyI = row.querySelector('.qty-input');
+                const qty = parseInt(qtyI?.value || '1', 10);
+                const safeQty = isNaN(qty) || qty < 1 ? 1 : qty;
+
+                const wrap = document.createElement('div');
+                wrap.innerHTML = `
+            <input type="hidden" data-dynamic="1" name="items[${pid}][product_id]" value="${pid}">
+            <input type="hidden" data-dynamic="1" name="items[${pid}][size_id]" value="${sel.value}">
+            <input type="hidden" data-dynamic="1" name="items[${pid}][qty]" value="${safeQty}">
+        `;
+                bulkForm.appendChild(wrap);
+            }
+
+            // ✅ Master check/uncheck all
+            checkAll?.addEventListener('change', e => {
+                table.querySelectorAll('.row-check').forEach(c => c.checked = e.target.checked);
+            });
+
+            // ✅ Size change => sirf price update
+            table.addEventListener('change', e => {
+                const sel = e.target.closest('.row-size');
+                if (!sel) return;
+
+                const row = sel.closest('tr[data-row]');
+                const price = Number(sel.selectedOptions[0].dataset.price || 0);
+                const priceSpan = row.querySelector('[data-line-total]');
+                if (priceSpan) priceSpan.textContent = price.toFixed(2);
+            });
+
+            // ✅ Add to cart (single row)
+            table.addEventListener('click', e => {
+                const btn = e.target.closest('.add-to-cart-btn');
+                if (!btn) return;
+                e.preventDefault();
+                clearHidden();
+                injectHiddenForRow(btn.closest('tr[data-row]'));
+                if (bulkForm.querySelector('input[data-dynamic="1"]')) {
+                    bulkForm.submit();
+                }
+            });
+
+            // ✅ Add selected
+            btnSel?.addEventListener('click', e => {
+                e.preventDefault();
+                clearHidden();
+                const rows = [...table.querySelectorAll('tr[data-row]')].filter(r =>
+                    r.querySelector('.row-check')?.checked
+                );
+                if (!rows.length) return alert('Please select at least one product.');
+                rows.forEach(injectHiddenForRow);
+                bulkForm.submit();
+            });
+
+            // ✅ Add all
+            btnAll?.addEventListener('click', e => {
+                e.preventDefault();
+                clearHidden();
+                table.querySelectorAll('tr[data-row]').forEach(injectHiddenForRow);
+                bulkForm.submit();
+            });
+        });
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ✅ Input setup
+            document.querySelectorAll('.qty-input').forEach(i => {
+                i.setAttribute('step', '1');
+                i.addEventListener('wheel', e => e.preventDefault(), {
+                    passive: false
+                });
+            });
+
+            // ✅ Increment/decrement buttons
+            document.addEventListener('click', function(e) {
+                const incBtn = e.target.closest('.inc-qty');
+                const decBtn = e.target.closest('.dec-qty');
+                if (!incBtn && !decBtn) return;
+
+                const row = (incBtn || decBtn).closest('tr[data-row]');
+                const qty = row?.querySelector('.qty-input');
+                if (!qty) return;
+
+                e.preventDefault();
+                e.stopPropagation(); // 🚀 stop bubbling
+                e.stopImmediatePropagation(); // 🚀 stop theme’s handler too
+
+                let v = parseInt(qty.value || '1', 10);
+                if (isNaN(v) || v < 1) v = 1;
+
+                if (incBtn) v = v + 1;
+                if (decBtn && v > 1) v = v - 1;
+
+                qty.value = v;
+            }, true);
+
+        });
+    </script>
+
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {

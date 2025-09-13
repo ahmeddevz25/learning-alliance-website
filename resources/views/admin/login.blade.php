@@ -8,7 +8,7 @@
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
 
-    <title>Register Basic - Pages | Sneat - Bootstrap 5 HTML Admin Template - Pro</title>
+    <title>Login to Learning Alliance </title>
 
     <meta name="description" content="" />
 
@@ -64,8 +64,6 @@
                             </a>
                         </div>
                         <!-- /Logo -->
-                        <h4 class="mb-2">Welcome to Learning Alliance Dashboard 👋</h4>
-                        <p class="mb-4">Please sign-in to your account and start the adventure</p>
                         <form id="formAuthentication" class="mb-3" action="{{ route('login.submit') }}"
                             method="POST">
                             @csrf

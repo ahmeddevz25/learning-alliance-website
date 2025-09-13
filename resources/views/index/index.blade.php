@@ -3,38 +3,29 @@
     <div class="body-wrapper">
         <main id="MainContent" class="content-for-layout">
             <!-- Carousel -->
-            <div id="demo" class="carousel slide" data-bs-ride="carousel" data-bs-interval="1200"
+            <div id="demo" class="carousel slide" data-bs-ride="carousel" data-bs-interval="2000"
                 style="background-color: whitesmoke;">
                 <!-- Indicators/dots -->
-                <div class="carousel-indicators">
-                    <button type="button" data-bs-target="#demo" data-bs-slide-to="0" class="active"></button>
-                    <button type="button" data-bs-target="#demo" data-bs-slide-to="1"></button>
-                    <button type="button" data-bs-target="#demo" data-bs-slide-to="2"></button>
-                </div>
 
-                <!-- The slideshow/carousel -->
-                <div class="carousel-inner">
-                    <div class="carousel-item active">
-                        <img src="{{ asset('index') }}/assets/img/bannerimg1.png" alt="Los Angeles" class="d-block"
-                            style="width:100%">
-                    </div>
-                    <div class="carousel-item">
-                        <img src="{{ asset('index') }}/assets/img/bannerimg2.png" alt="Chicago" class="d-block"
-                            style="width:100%">
-                    </div>
-                    <div class="carousel-item">
-                        <img src="{{ asset('index') }}/assets/img/bannerimg3.png" alt="Chicago" class="d-block"
-                            style="width:100%">
+                <div id="carouselExampleSlidesOnly" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+                        <div class="carousel-item active">
+                            <img src="{{ asset('index') }}/assets/img/bannerimg2.png" class="d-block w-100" alt="...">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="{{ asset('index') }}/assets/img/1.png" class="d-block w-100" alt="...">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="{{ asset('index') }}/assets/img/2.png" class="d-block w-100" alt="...">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="{{ asset('index') }}/assets/img/3.png" class="d-block w-100" alt="...">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="{{ asset('index') }}/assets/img/4.png" class="d-block w-100" alt="...">
+                        </div>
                     </div>
                 </div>
-
-                <!-- Left and right controls/icons -->
-                <button class="carousel-control-prev" type="button" data-bs-target="#demo" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon"></span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#demo" data-bs-slide="next">
-                    <span class="carousel-control-next-icon"></span>
-                </button>
             </div>
             <!-- trusted badge start -->
             <div class="mt-60 home-section">
@@ -45,13 +36,15 @@
                                 @php
                                     // Ensure both id and slug are being passed correctly
                                     $url = route('category.show', [$cat->id, Str::slug($cat->name)]);
-                                    $img = $cat->name == 'Summer Uniform'
-                                        ? asset('index/assets/img/summeruniform.png')
-                                        : asset('index/assets/img/winteruniform.png');
+                                    $img =
+                                        $cat->name == 'Summer Uniform'
+                                            ? asset('index/assets/img/summeruniform.png')
+                                            : asset('index/assets/img/winteruniform.png');
                                 @endphp
 
                                 <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
-                                    <a href="{{ $url }}" class="category-block category-block-2 heading_18 medium text-center">
+                                    <a href="{{ $url }}"
+                                        class="category-block category-block-2 heading_18 medium text-center">
                                         <img src="{{ $img }}" alt="{{ $cat->name }}" class="img-fluid">
                                         <span class="collection-title">{{ $cat->name }}</span>
                                     </a>
@@ -79,7 +72,7 @@
                 <div class="latest-blog-inner">
                     <div class="container">
                         <div class="section-header text-center">
-                            <img src="{{ asset('index') }}/assets/img/bannerimg3.png" alt="">
+                            <img src="{{ asset('index') }}/assets/img/bannerimg2.png" alt="">
                         </div>
                     </div>
                 </div>
@@ -105,46 +98,46 @@
 
     </div>
 
-<script>
-    $(document).ready(function() {
-        // Trigger on Quickview button click
-        $(".action-quickview").on('click', function() {
-            var productId = $(this).data('id'); // Get product ID
+    <script>
+        $(document).ready(function() {
+            // Trigger on Quickview button click
+            $(".action-quickview").on('click', function() {
+                var productId = $(this).data('id'); // Get product ID
 
-            // Fetch product details using AJAX or any other method
-            $.ajax({
-                url: '/get-product-details', // Your endpoint to fetch product details
-                method: 'GET',
-                data: {
-                    id: productId
-                },
-                success: function(response) {
-                    // Populate the modal with product data
-                    $('#product-title').text(response.title);
-                    $('#product-price .regular-price').text('$' + response.price);
-                    $('#product-image').attr('src', response.main_image);
+                // Fetch product details using AJAX or any other method
+                $.ajax({
+                    url: '/get-product-details', // Your endpoint to fetch product details
+                    method: 'GET',
+                    data: {
+                        id: productId
+                    },
+                    success: function(response) {
+                        // Populate the modal with product data
+                        $('#product-title').text(response.title);
+                        $('#product-price .regular-price').text('$' + response.price);
+                        $('#product-image').attr('src', response.main_image);
 
-                    // Populate Product Thumbnails
-                    var thumbnailsHTML = '';
-                    response.thumbnails.forEach(function(img) {
-                        thumbnailsHTML +=
-                            '<div><div class="img-thumb-wrapper"><img src="' + img +
-                            '" alt="img" /></div></div>';
-                    });
-                    $('.qv-thumb-slider').html(thumbnailsHTML);
+                        // Populate Product Thumbnails
+                        var thumbnailsHTML = '';
+                        response.thumbnails.forEach(function(img) {
+                            thumbnailsHTML +=
+                                '<div><div class="img-thumb-wrapper"><img src="' + img +
+                                '" alt="img" /></div></div>';
+                        });
+                        $('.qv-thumb-slider').html(thumbnailsHTML);
 
-                    // Inject Product Variants (size, color)
-                    var variantHTML = '';
-                    response.variants.forEach(function(variant) {
-                        variantHTML +=
-                            '<li class="variant-item"><input type="radio" value="' +
-                            variant.value + '" /><label class="variant-label">' +
-                            variant.label + '</label></li>';
-                    });
-                    $('.product-variant-wrapper').html(variantHTML);
-                }
+                        // Inject Product Variants (size, color)
+                        var variantHTML = '';
+                        response.variants.forEach(function(variant) {
+                            variantHTML +=
+                                '<li class="variant-item"><input type="radio" value="' +
+                                variant.value + '" /><label class="variant-label">' +
+                                variant.label + '</label></li>';
+                        });
+                        $('.product-variant-wrapper').html(variantHTML);
+                    }
+                });
             });
         });
-    });
-</script>
+    </script>
 @endsection
