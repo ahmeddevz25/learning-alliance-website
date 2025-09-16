@@ -140,27 +140,21 @@
                                                         @endforeach
                                                     </div>
                                                 </div>
-
                                             </td>
-
-
-
-
-                                            <!-- Main Image Thumbnail -->
                                             <td>
                                                 @php
                                                     $mainImage = $product->images->firstWhere('is_primary', true);
                                                 @endphp
                                                 @if ($mainImage && $mainImage->image_path)
                                                     <img src="{{ asset('storage/' . $mainImage->image_path) }}"
-                                                        alt="Main Image" class="rounded"
+                                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                                            title="{{ $product->name }}"
+                                                        alt="{{ $product->name }}" class="rounded-circle"
                                                         style="object-fit: cover; width: 60px; height: 60px;">
                                                 @else
                                                     <span class="text-muted">No Image</span>
                                                 @endif
                                             </td>
-
-                                            <!-- Image Thumbnails (Exclude Main Image, Max 3) -->
                                             <td>
                                                 <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
                                                     @php
@@ -168,7 +162,6 @@
                                                             return !$img->is_primary;
                                                         });
                                                     @endphp
-
                                                     @foreach ($otherImages->take(3) as $image)
                                                         <li data-bs-toggle="tooltip" data-bs-placement="top"
                                                             title="{{ $product->name }}">
