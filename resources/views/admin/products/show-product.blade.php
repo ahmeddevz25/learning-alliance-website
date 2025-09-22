@@ -130,7 +130,7 @@
                                                                 </span>
 
                                                                 {{-- Stock (optional, if needed later) --}}
-                                                                {{-- 
+                                                                {{--
                 <span class="badge {{ $size->stock > 0 ? 'bg-info' : 'bg-danger' }} px-3 py-2"
                       style="font-size: 0.9rem; border-radius: 12px;">
                     {{ $size->stock > 0 ? $size->stock . ' in stock' : 'Out of stock' }}

@@ -141,43 +141,47 @@ class IndexController extends Controller
         // Header badge: total quantity
         $cartCount = Cart::where('session_id', $cartKey)->sum('quantity');
 
-        // Get category ID from request
-        $categoryId = $request->integer('category');
+        // 👇 Accessories category ka ID yahan fix kar do (apne DB se check kar lo)
+        $accessoriesCategory = Category::where('name', 'Accessories')->first();
 
-        // Get current category
-        $category = Category::find($categoryId);
+        if (! $accessoriesCategory) {
+            abort(404, 'Accessories category not found.');
+        }
 
-        // If category exists, get its parent category
-        $parentCategory = $category ? $category->parent : null;
-
-        // Query for products (with many-to-many categories relation)
+        // Query for products
         $query = Product::with([
             'images',
             'categories',
             'sizes' => function ($q) {
-                $q->where('is_active', true); // 👈 sirf active sizes
+                $q->where('is_active', true);
             },
             'sizes.sizeItem',
         ]);
 
-        if ($categoryId && $category) {
-            // Collect IDs of selected category + its descendants
-            $categoryIds   = $category->descendantIds();
-            $categoryIds[] = $categoryId;
+        // Accessories category + uske descendants
+        $categoryIds   = $accessoriesCategory->descendantIds();
+        $categoryIds[] = $accessoriesCategory->id;
 
-            // Filter products that have these categories
-            $query->whereHas('categories', function ($q) use ($categoryIds) {
-                $q->whereIn('categories.id', $categoryIds);
-            });
-        }
+        $query->whereHas('categories', function ($q) use ($categoryIds) {
+            $q->whereIn('categories.id', $categoryIds);
+        });
 
-        // Get products and preserve the filter with appends()
-        $products = $query->paginate(10)->appends($request->query());
+        $products = $query->paginate(10);
 
-        // Get categories sorted by the order or creation date
-        $categories = Category::orderBy('created_at')->get();
+        // sirf Accessories categories bhejna
+        $categories = Category::where('id', $accessoriesCategory->id)
+            ->orWhereIn('id', $accessoriesCategory->descendantIds())
+            ->orderBy('created_at')
+            ->get();
 
-        return view('index.accessories', compact('products', 'categories', 'categoryId', 'cartCount', 'parentCategory', 'category'));
+        return view('index.accessories', [
+            'products'       => $products,
+            'categories'     => $categories,
+            'categoryId'     => $accessoriesCategory->id,
+            'cartCount'      => $cartCount,
+            'parentCategory' => $accessoriesCategory->parent,
+            'category'       => $accessoriesCategory,
+        ]);
     }
 
     public function product_details(Request $request, $slug)
