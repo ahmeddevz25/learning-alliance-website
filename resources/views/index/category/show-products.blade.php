@@ -1,7 +1,58 @@
 @extends('index.layout')
 @section('content')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <style>
+        /* Choices wrapper ko small banado */
+        .choices__inner {
+            min-height: auto !important;
+            padding: 2px 6px !important;
+            /* chhota padding */
+            font-size: 13px !important;
+            /* text small */
+            line-height: 1.2 !important;
+        }
 
+        /* Single item text */
+        .choices__list--single .choices__item {
+            font-size: 13px !important;
+            padding: 0 !important;
+        }
+
+        /* Dropdown list items */
+        .choices__list--dropdown .choices__item {
+            font-size: 13px !important;
+            padding: 4px 8px !important;
+        }
+
+        /* 🔥 Hover aur selected dono green */
+        .choices__list--dropdown .choices__item--selectable.is-highlighted {
+            background-color: #065d3c !important;
+            color: #fff !important;
+        }
+
+        /* Default text black */
+        .choices__list--single .choices__item {
+            color: #000 !important;
+        }
+
+
+        .page-link {
+            color: #065d3c;
+            border: 1px solid #dee2e6;
+        }
+
+        .page-link:hover {
+            background-color: #065d3c;
+            color: #fff !important;
+            border-color: #065d3c;
+        }
+
+        .page-item.active .page-link {
+            background-color: #065d3c;
+            border-color: #065d3c;
+            color: #fff !important;
+        }
+    </style>
     {{-- Breadcrumb --}}
     <div class="breadcrumb">
         <div class="container">
@@ -147,6 +198,7 @@
                                                         </fieldset>
                                                     </td>
 
+
                                                     <td class="cart-item-quantity">
                                                         <div
                                                             class="quantity d-flex align-items-center justify-content-between">
@@ -186,6 +238,8 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
     {{-- <script>
         document.addEventListener('DOMContentLoaded', () => {
             const bulkForm = document.getElementById('bulkForm');
@@ -386,7 +440,12 @@
                 const row = sel.closest('tr[data-row]');
                 const price = Number(sel.selectedOptions[0].dataset.price || 0);
                 const priceSpan = row.querySelector('[data-line-total]');
-                if (priceSpan) priceSpan.textContent = price.toFixed(2);
+                if (priceSpan) {
+                    priceSpan.textContent = price.toLocaleString('en-PK', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                }
             });
 
             // ✅ Add to cart (single row)
@@ -458,7 +517,6 @@
         });
     </script>
 
-
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const catSelect = document.getElementById('categorySelect');
@@ -467,5 +525,14 @@
             });
         });
     </script>
-
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.row-size').forEach(function(el) {
+                new Choices(el, {
+                    searchEnabled: false, // search hide
+                    itemSelectText: '', // "Press to select" text hatado
+                });
+            });
+        });
+    </script>
 @endsection

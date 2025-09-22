@@ -1,22 +1,21 @@
 <?php
 
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ContactMessageController;
+use App\Http\Controllers\Admin\InstructionGuideController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Index\CartController;
-use App\Http\Controllers\Admin\AdminController;
-use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Index\IndexController;
-use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\PermissionController;
-use App\Http\Controllers\Admin\ContactMessageController;
-use App\Http\Controllers\Admin\InstructionGuideController;
-
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 
 Route::get('admin/login', [AdminController::class, 'LoginForm'])->name('login');
 Route::post('admin/login', [AdminController::class, 'login'])->name('login.submit');
@@ -34,28 +33,24 @@ Route::get('contact-us', [IndexController::class, 'contactus'])->name('contactus
 Route::get('washing-instructions', [IndexController::class, 'washing_instructions'])->name('washingInstructions');
 Route::get('accessories', [IndexController::class, 'accessories'])->name('accessories');
 
-
 Route::get('product/details/{slug}', [IndexController::class, 'product_details'])->name('product.details');
-
-
 
 Route::get('/thank-you/{order}', [IndexController::class, 'thankyou'])->name('order.thankyou');
 Route::post('/contact', [IndexController::class, 'submit'])->name('contact.submit');
 
 // Cart Routes
-Route::get('cart', [CartController::class, 'index'])->name('cart.index'); // Cart page view
-Route::post('cart/add', [CartController::class, 'add'])->name('cart.add'); // Add to cart
+Route::get('cart', [CartController::class, 'index'])->name('cart.index');                // Cart page view
+Route::post('cart/add', [CartController::class, 'add'])->name('cart.add');               // Add to cart
 Route::post('cart/update/{id}', [CartController::class, 'update'])->name('cart.update'); // Update quantity/size
 Route::delete('/cart/remove/{id}', [CartController::class, 'ajaxRemove'])
     ->name('cart.ajaxRemove');
 
-    Route::post('/cart/bulk-add', [CartController::class, 'bulkAdd'])->name('cart.bulkAdd');
-    Route::get('cart/details', [CartController::class, 'cartdetails'])->name('cartdetails');
-    Route::patch('/cart/{cart}/quantity', [CartController::class, 'ajaxUpdateQuantity'])
+Route::post('/cart/bulk-add', [CartController::class, 'bulkAdd'])->name('cart.bulkAdd');
+Route::get('cart/details', [CartController::class, 'cartdetails'])->name('cartdetails');
+Route::patch('/cart/{cart}/quantity', [CartController::class, 'ajaxUpdateQuantity'])
     ->name('cart.quantity');
-    Route::get('checkout', [CartController::class, 'checkout'])->name('checkout');
-    Route::post('/checkout/place-order', [CartController::class, 'place'])->name('order.place');
-
+Route::get('checkout', [CartController::class, 'checkout'])->name('checkout');
+Route::post('/checkout/place-order', [CartController::class, 'place'])->name('order.place');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('admin/dashboard', [AdminController::class, 'index'])->name('dashboard');
@@ -77,14 +72,13 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/products/update/{id}', [ProductController::class, 'update'])->name('products.update');
     Route::get('/products/delete/{id}', [ProductController::class, 'destroy'])->name('products.delete');
 
-
     //Order Management
     Route::get('/orders', [OrderController::class, 'index'])->name('orders');
     Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
     Route::post('/orders/{id}/update', [OrderController::class, 'update'])->name('orders.update');
     Route::get('/orders/delete/{id}', [OrderController::class, 'destroy'])->name('orders.delete');
 
-    Route::patch('orders/{order}/status',  [OrderController::class, 'updateStatus'])->name('admin.orders.status');
+    Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('admin.orders.status');
     Route::patch('orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('admin.orders.payment');
 
     //Instructions Routes
@@ -99,7 +93,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/contact-messages/delete/{id}', [ContactMessageController::class, 'destroy'])->name('contactmessages.delete');
 
     // Route::post('/contact', [ContactMessageController::class, 'submit'])->name('contact.submit');
-
 
     // Index - All Users
     Route::get('/users', [UserController::class, 'index'])->name('users');
@@ -131,12 +124,12 @@ Route::get('clear-cache', [IndexController::class, 'cacheclear'])->name('cachecl
 Route::get('/setup-project', function () {
     // Migrate fresh
     Artisan::call('migrate:fresh', [
-        '--force' => true
+        '--force' => true,
     ]);
 
     // Seed database
     Artisan::call('db:seed', [
-        '--force' => true
+        '--force' => true,
     ]);
 
     // Storage link
@@ -229,13 +222,13 @@ Route::get('/insert-data', function () {
         ['id' => 31, 'name' => 'IB', 'parent_id' => 20, 'created_at' => '2025-08-01 23:16:49', 'updated_at' => '2025-08-01 23:16:49'],
         ['id' => 32, 'name' => 'PYP', 'parent_id' => 31, 'created_at' => '2025-08-01 23:17:51', 'updated_at' => '2025-08-01 23:17:51'],
         ['id' => 33, 'name' => 'MYP', 'parent_id' => 31, 'created_at' => '2025-08-01 23:18:13', 'updated_at' => '2025-08-01 23:18:13'],
-        ['id' => 34, 'name' => 'DP', 'parent_id' => 31, 'created_at' => '2025-08-01 23:19:14', 'updated_at' => '2025-08-01 23:18:14']
+        ['id' => 34, 'name' => 'DP', 'parent_id' => 31, 'created_at' => '2025-08-01 23:19:14', 'updated_at' => '2025-08-01 23:18:14'],
     ]);
     return "✅ Data inserted successfully!";
 });
 
 Route::get('/create-payment-mode-table', function () {
-    if (!Schema::hasTable('payment_modes')) {
+    if (! Schema::hasTable('payment_modes')) {
         Schema::create('payment_modes', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -245,8 +238,6 @@ Route::get('/create-payment-mode-table', function () {
     }
     return "⚠️ payment_modes table already exists.";
 });
-
-
 
 // Route::get('/create-visitors-table', function () {
 //     try {
@@ -269,4 +260,11 @@ Route::get('/composer-dump-autoload', function () {
     } catch (\Exception $e) {
         return "❌ Error: " . $e->getMessage();
     }
+});
+
+Route::get('/migrate', function () {
+
+    Artisan::call('migrate');
+
+    return "✅Migration successfully!";
 });

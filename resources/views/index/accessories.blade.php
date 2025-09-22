@@ -1,5 +1,33 @@
 @extends('index.layout')
 @section('content')
+    <style>
+        /* 🔥 Hover aur selected dono green */
+        .choices__list--dropdown .choices__item--selectable.is-highlighted {
+            background-color: #065d3c !important;
+            color: #fff !important;
+        }
+
+        .choices__list--single .choices__item {
+            color: #000 !important;
+        }
+
+        .page-link {
+            color: #065d3c;
+            border: 1px solid #dee2e6;
+        }
+
+        .page-link:hover {
+            background-color: #065d3c;
+            color: #fff !important;
+            border-color: #065d3c;
+        }
+
+        .page-item.active .page-link {
+            background-color: #065d3c;
+            border-color: #065d3c;
+            color: #fff !important;
+        }
+    </style>
     <div class="body-wrapper">
         <!-- breadcrumb start -->
         <div class="breadcrumb">
@@ -30,7 +58,7 @@
                         <section class="col-lg-12">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <div>
-                                    <h2 class="heading_24 mb-0">All products</h2>
+                                    <h2 class="heading_24 mb-0">Accessories Products</h2>
                                     <small class="text-muted">
                                         ({{ method_exists($products, 'total') ? $products->total() : $products->count() }}
                                         items)
@@ -79,7 +107,7 @@
                                 @csrf
                                 <div class="table-responsive">
                                     <table class="table align-middle">
-                                        <thead class="table-dark">
+                                        <thead class="table-dark text-center">
                                             <tr>
                                                 <th style="width:36px;"><input type="checkbox" id="checkAll"></th>
                                                 <th style="width:110px;">Thumbnail</th>
@@ -142,7 +170,6 @@
                                                                     </option>
                                                                 @endforeach
                                                             </select>
-
                                                         </fieldset>
                                                     </td>
 
@@ -183,8 +210,8 @@
                 </div>
             </div>
         </main>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+        <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', () => {
                 const bulkForm = document.getElementById('bulkForm');
@@ -254,10 +281,15 @@
                         const priceSpan = row.querySelector('[data-line-total]');
 
                         if (priceSpan && price) {
-                            priceSpan.textContent = parseFloat(price).toFixed(2);
+                            // Format with comma + 2 decimals
+                            priceSpan.textContent = Number(price).toLocaleString('en-PK', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            });
                         }
                     }
                 });
+
             });
         </script>
 
@@ -277,6 +309,15 @@
                 });
             });
         </script>
-
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                document.querySelectorAll('.row-size').forEach(function(el) {
+                    new Choices(el, {
+                        searchEnabled: false, // search hide
+                        itemSelectText: '', // "Press to select" text hatado
+                    });
+                });
+            });
+        </script>
     </div>
 @endsection

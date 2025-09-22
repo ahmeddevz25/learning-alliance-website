@@ -1,21 +1,22 @@
 <?php
 namespace App\Http\Controllers\Index;
 
-use App\Http\Controllers\Controller;
-use App\Mail\ContactSubmitted;
+use Exception;
 use App\Models\Cart;
-use App\Models\Category;
-use App\Models\ContactMessage;
-use App\Models\InstructionGuid;
 use App\Models\Order;
 use App\Models\Product;
-use App\Models\ProductSizeItem;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Cookie;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
+use App\Models\Category;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use App\Mail\ContactSubmitted;
+use App\Models\ContactMessage;
+use App\Models\InstructionGuid;
+use App\Models\ProductSizeItem;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Artisan;
 
 class IndexController extends Controller
 {
@@ -132,56 +133,62 @@ class IndexController extends Controller
 
     public function accessories(Request $request)
     {
-        $cartKey = Cookie::get('cart_key');
-        if (! $cartKey) {
-            $cartKey = (string) Str::uuid();
-            Cookie::queue(cookie('cart_key', $cartKey, 60 * 24 * 90, null, null, false, true, false, 'Lax'));
+        try {
+            $cartKey = Cookie::get('cart_key');
+            if (! $cartKey) {
+                $cartKey = (string) Str::uuid();
+                Cookie::queue(cookie('cart_key', $cartKey, 60 * 24 * 90, null, null, false, true, false, 'Lax'));
+            }
+
+            // Header badge: total quantity
+            $cartCount = Cart::where('session_id', $cartKey)->sum('quantity');
+
+            // 👇 Accessories category ka ID yahan fix kar do (apne DB se check kar lo)
+            $accessoriesCategory = Category::where('name', 'Accessories')->first();
+
+            if (! $accessoriesCategory) {
+                abort(404, 'Accessories category not found.');
+            }
+
+            // Query for products
+            $query = Product::with([
+                'images',
+                'categories',
+                'sizes' => function ($q) {
+                    $q->where('is_active', true);
+                },
+                'sizes.sizeItem',
+            ]);
+
+            // Accessories category + uske descendants
+            $categoryIds   = $accessoriesCategory->descendantIds();
+            $categoryIds[] = $accessoriesCategory->id;
+
+            $query->whereHas('categories', function ($q) use ($categoryIds) {
+                $q->whereIn('categories.id', $categoryIds);
+            });
+
+            $products = $query->paginate(10);
+
+            // sirf Accessories categories bhejna
+            $categories = Category::where('id', $accessoriesCategory->id)
+                ->orWhereIn('id', $accessoriesCategory->descendantIds())
+                ->orderBy('created_at')
+                ->get();
+            return view('index.accessories', [
+                'products'       => $products,
+                'categories'     => $categories,
+                'categoryId'     => $accessoriesCategory->id,
+                'cartCount'      => $cartCount,
+                'parentCategory' => $accessoriesCategory->parent,
+                'category'       => $accessoriesCategory,
+            ]);
+        } catch (Exception $e) {
+            // Log the error for debugging
+            Log::error('Accessories page error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Something went wrong. Please try again later.');
         }
 
-        // Header badge: total quantity
-        $cartCount = Cart::where('session_id', $cartKey)->sum('quantity');
-
-        // 👇 Accessories category ka ID yahan fix kar do (apne DB se check kar lo)
-        $accessoriesCategory = Category::where('name', 'Accessories')->first();
-
-        if (! $accessoriesCategory) {
-            abort(404, 'Accessories category not found.');
-        }
-
-        // Query for products
-        $query = Product::with([
-            'images',
-            'categories',
-            'sizes' => function ($q) {
-                $q->where('is_active', true);
-            },
-            'sizes.sizeItem',
-        ]);
-
-        // Accessories category + uske descendants
-        $categoryIds   = $accessoriesCategory->descendantIds();
-        $categoryIds[] = $accessoriesCategory->id;
-
-        $query->whereHas('categories', function ($q) use ($categoryIds) {
-            $q->whereIn('categories.id', $categoryIds);
-        });
-
-        $products = $query->paginate(10);
-
-        // sirf Accessories categories bhejna
-        $categories = Category::where('id', $accessoriesCategory->id)
-            ->orWhereIn('id', $accessoriesCategory->descendantIds())
-            ->orderBy('created_at')
-            ->get();
-
-        return view('index.accessories', [
-            'products'       => $products,
-            'categories'     => $categories,
-            'categoryId'     => $accessoriesCategory->id,
-            'cartCount'      => $cartCount,
-            'parentCategory' => $accessoriesCategory->parent,
-            'category'       => $accessoriesCategory,
-        ]);
     }
 
     public function product_details(Request $request, $slug)
