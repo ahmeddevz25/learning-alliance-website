@@ -131,7 +131,7 @@
                                         <div class="col-md-6 col-12">
                                             <fieldset>
                                                 <input type="text" name="name" value="{{ old('name') }}"
-                                                    placeholder="Full name" required>
+                                                    placeholder="Full Name" required>
                                             </fieldset>
                                         </div>
                                         <div class="col-md-6 col-12">

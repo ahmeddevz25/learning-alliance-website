@@ -30,13 +30,13 @@ Route::get('/uniform/{name}', [IndexController::class, 'category'])->name('categ
 
 Route::get('size-chart', [IndexController::class, 'size_chart'])->name('SizeChart');
 Route::get('contact-us', [IndexController::class, 'contactus'])->name('contactus');
+Route::post('/contact', [IndexController::class, 'submit'])->name('contact.submit');
 Route::get('washing-instructions', [IndexController::class, 'washing_instructions'])->name('washingInstructions');
 Route::get('accessories', [IndexController::class, 'accessories'])->name('accessories');
 
 Route::get('product/details/{slug}', [IndexController::class, 'product_details'])->name('product.details');
 
 Route::get('/thank-you/{order}', [IndexController::class, 'thankyou'])->name('order.thankyou');
-Route::post('/contact', [IndexController::class, 'submit'])->name('contact.submit');
 
 // Cart Routes
 Route::get('cart', [CartController::class, 'index'])->name('cart.index');                // Cart page view
