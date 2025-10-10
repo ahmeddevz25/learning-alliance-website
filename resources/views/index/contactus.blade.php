@@ -40,8 +40,6 @@
         </div>
         <main id="MainContent" class="content-for-layout">
             <div class="contact-page">
-
-                <!-- contact box start -->
                 <div class="contact-box mt-100">
                     <div class="contact-box-wrapper">
                         <div class="container">

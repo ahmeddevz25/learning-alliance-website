@@ -8,24 +8,23 @@ class AdminRedirect
 {
     public function handle($request, Closure $next)
     {
-        // Agar admin login page pe hai
-        if ($request->is('admin/login')) {
+        // Check 1: Agar user sirf /admin hit karta hai (ya admin/ par ho)
+        if ($request->is('admin') || $request->is('admin/')) {
+            // Agar logged in hai, toh dashboard par bhej do
             if (Auth::check()) {
-                // Agar already login hai → dashboard bhej do
                 return redirect()->route('dashboard');
-            }
-            return $next($request); // warna login page dikhao
-        }
-
-        // Agar koi aur admin route access ho raha hai (jaise dashboard)
-        if ($request->is('admin/*')) {
-            if (! Auth::check()) {
-                // Agar login nahi hai → login page bhej do
+            } else {
+                // Agar logged in nahi hai, toh login page par bhej do
                 return redirect()->route('login');
             }
         }
 
+        // Check 2: Agar user admin/login page par hai aur already logged in hai
+        if ($request->is('admin/login') && Auth::check()) {
+            return redirect()->route('dashboard');
+        }
+
+        // Baaqi routes ke liye aage badh jao (next middleware ya controller)
         return $next($request);
     }
-
 }
