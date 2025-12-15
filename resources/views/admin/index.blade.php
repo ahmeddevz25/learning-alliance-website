@@ -1,52 +1,5 @@
 @extends('admin.layouts')
 @section('content')
-    <!DOCTYPE html>
-    <html lang="en" class="light-style layout-menu-fixed" dir="ltr" data-theme="theme-default"
-        data-assets-path="../assets/" data-template="vertical-menu-template-free">
-    <style>
-        /* Force Toastr styles in case theme is overriding */
-
-        .toast-success {
-            background-color: #51A351 !important;
-        }
-
-        .toast-error {
-            background-color: #BD362F !important;
-        }
-
-        .toast-info {
-            background-color: #2F96B4 !important;
-        }
-
-        .toast-warning {
-            background-color: #F89406 !important;
-        }
-
-        /* Round icon background */
-        .icon-circle {
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            margin: 0 auto;
-        }
-
-        /* Card hover effect */
-        .hover-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .hover-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
-        }
-    </style>
-
-
-    <body>
-        <!-- Layout wrapper -->
         <div class="layout-wrapper layout-content-navbar">
             <div class="layout-container">
                 <div class="layout-page">
@@ -227,7 +180,6 @@
                 </div>
             </div>
         </div>
-    </body>
-
-    </html>
 @endsection
+
+
