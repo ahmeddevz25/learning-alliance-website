@@ -175,11 +175,11 @@
                                     <div class="product-variant product-variant-other">
                                         <strong class="label mb-1 d-block mb-3">Size:</strong>
 
-                                        <ul class="variant-list list-unstyled d-flex align-items-center flex-wrap">
+                                        {{-- <ul class="variant-list list-unstyled d-flex align-items-center flex-wrap">
                                             @foreach ($product->sizes as $size)
                                                 <li class="variant-item">
-                                                    <input type="radio" name="size_choice" {{-- UI-only name --}}
-                                                        value="{{ $size->sizeItem->id }}" {{-- size_id --}}
+                                                    <input type="radio" name="size_choice"
+                                                        value="{{ $size->sizeItem->id }}"
                                                         data-price="{{ $size->price }}" data-stock="{{ $size->stock }}"
                                                         id="size-{{ $size->sizeItem->id }}"
                                                         @if ($size->stock == 0) disabled @endif
@@ -197,11 +197,26 @@
 
                                                 </li>
                                             @endforeach
+                                        </ul> --}}
+                                        <ul class="variant-list list-unstyled d-flex align-items-center flex-wrap">
+                                            @foreach ($product->sizes as $size)
+                                                <li class="variant-item">
+                                                    <input type="radio" name="size_choice"
+                                                        value="{{ $size->sizeItem->id }}" data-price="{{ $size->price }}"
+                                                        id="size-{{ $size->sizeItem->id }}"
+                                                        @if ($loop->first) checked @endif />
+
+                                                    <label class="variant-label" for="size-{{ $size->sizeItem->id }}">
+                                                        {{ $size->sizeItem->size }}
+                                                    </label>
+                                                </li>
+                                            @endforeach
                                         </ul>
+
                                     </div>
                                 </div>
 
-                                <div class="product-stock-wrapper mb-4">
+                                {{-- <div class="product-stock-wrapper mb-4">
                                     <span class="product-stock" id="size-stock">
                                         @if (($firstSize->price ?? 0) > 0 && ($firstSize->stock ?? 0) > 0)
                                             {{ $firstSize->stock }} in stock
@@ -209,7 +224,7 @@
                                             Out of Stock
                                         @endif
                                     </span>
-                                </div>
+                                </div> --}}
 
 
                                 {{-- ADD TO CART FORM --}}
@@ -226,7 +241,7 @@
                                     {{-- <input class="qty-input" type="number" name="quantity" value="1" min="1"> --}}
 
 
-                                    <div class="quantity d-flex align-items-center justify-content-between">
+                                    {{-- <div class="quantity d-flex align-items-center justify-content-between">
                                         <button type="button" class="qty-btn dec-qty" aria-label="Decrease">
                                             <img src="{{ asset('index') }}/assets/img/icon/minus.svg" alt="minus">
                                         </button>
@@ -235,6 +250,18 @@
                                             value="1" min="1" step="1"
                                             max="{{ $firstSize ? max(1, (int) $firstSize->stock) : 1 }}">
 
+
+                                        <button type="button" class="qty-btn inc-qty" aria-label="Increase">
+                                            <img src="{{ asset('index') }}/assets/img/icon/plus.svg" alt="plus">
+                                        </button>
+                                    </div> --}}
+                                    <div class="quantity d-flex align-items-center justify-content-between">
+                                        <button type="button" class="qty-btn dec-qty" aria-label="Decrease">
+                                            <img src="{{ asset('index') }}/assets/img/icon/minus.svg" alt="minus">
+                                        </button>
+
+                                        <input id="qty-input" class="qty-input" type="number" name="quantity"
+                                            value="1" min="1" step="1">
 
                                         <button type="button" class="qty-btn inc-qty" aria-label="Increase">
                                             <img src="{{ asset('index') }}/assets/img/icon/plus.svg" alt="plus">
@@ -256,7 +283,7 @@
             </div>
 
             <!-- product tab start -->
-            <div class="product-tab-section mt-100" data-aos="fade-up" data-aos-duration="700">
+            {{-- <div class="product-tab-section mt-100" data-aos="fade-up" data-aos-duration="700">
                 <div class="container">
                     <div class="tab-list product-tab-list">
                         <nav class="nav product-tab-nav">
@@ -269,8 +296,6 @@
                             <div class="row">
                                 <div class="col-lg-7 col-md-12 col-12">
                                     <div class="desc-content">
-                                        {{-- <h4 class="heading_18 mb-3">What is
-                                            lorem ipsum?</h4> --}}
                                         <p class="text_16 mb-4">{!! Str::limit(strip_tags($product->desc), 50) !!}</< /p>
                                     </div>
                                 </div>
@@ -290,8 +315,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            <!-- product tab end -->
+            </div> --}}
 
             @php
                 use Illuminate\Support\Str;
@@ -299,13 +323,13 @@
             @endphp
 
             @if ($relCount > 0)
-                <div class="featured-collection-section mt-100 home-section overflow-hidden">
+                <div class="featured-collection-section mt-100 home-section overflow-hidden mb-100">
                     <div class="container">
                         <div class="section-header">
                             <h2 class="section-heading">You may also like</h2>
                         </div>
                         <div class="product-container position-relative {{ $relCount === 1 ? 'related-one' : '' }}">
-                            <div class="row justify-content-start"> {{-- Start of single row --}}
+                            <div class="row justify-content-start">
                                 @foreach ($relatedProducts as $product)
                                     @php
                                         $imgs = $product->images ?? collect();
@@ -316,7 +340,7 @@
                                         $price = optional($product->sizes->first())->price ?? ($product->price ?? 0);
                                     @endphp
 
-                                    <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4"> {{-- This will make them appear in a row --}}
+                                    <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
                                         <div class="new-item" data-aos="fade-up" data-aos-duration="300">
                                             <div class="product-card">
                                                 <div class="product-card-img">
@@ -342,21 +366,21 @@
                                         </div>
                                     </div>
                                 @endforeach
-                            </div> {{-- End of row --}}
+                            </div>
                         </div>
-                        <div class="container text-center mb-3">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th colspan="4">
-                                            <div class="text-center mb-3">
-                                                {{ $relatedProducts->links() }}
-                                            </div>
-                                        </th>
-                                    </tr>
-                                </thead>
-                            </table>
-                        </div>
+                    </div>
+                    <div class="container text-center mb-3">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th colspan="4">
+                                        <div class="text-center mb-3">
+                                            {{ $relatedProducts->links() }}
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                        </table>
                     </div>
                 </div>
             @endif
@@ -368,7 +392,7 @@
             </svg>
         </button>
 
-        <script>
+        {{-- <script>
             document.addEventListener('DOMContentLoaded', () => {
                 if (window.__PD_BOUND__) return;
                 window.__PD_BOUND__ = true;
@@ -456,6 +480,57 @@
                     e.preventDefault();
                     qty.blur();
                 }, {
+                    passive: false
+                });
+            });
+        </script> --}}
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                if (window.__QTY_BOUND__) return;
+                window.__QTY_BOUND__ = true;
+
+                const qtyInput = document.getElementById('qty-input');
+                const incBtn = document.querySelector('.inc-qty');
+                const decBtn = document.querySelector('.dec-qty');
+
+                if (!qtyInput || !incBtn || !decBtn) return;
+
+                // Remove theme's existing click handlers (clone trick)
+                function resetBtn(btn) {
+                    const newBtn = btn.cloneNode(true);
+                    btn.parentNode.replaceChild(newBtn, btn);
+                    return newBtn;
+                }
+
+                const inc = resetBtn(incBtn);
+                const dec = resetBtn(decBtn);
+
+                // safe clamp
+                function clamp(val, min, max) {
+                    val = parseInt(val, 10);
+                    if (isNaN(val)) val = min;
+                    return Math.max(min, Math.min(max, val));
+                }
+
+                inc.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    let val = clamp(qtyInput.value, 1, 9999);
+                    qtyInput.value = val + 1;
+                });
+
+                dec.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    let val = clamp(qtyInput.value, 1, 9999);
+                    if (val > 1) qtyInput.value = val - 1;
+                });
+
+                qtyInput.addEventListener('input', () => {
+                    qtyInput.value = clamp(qtyInput.value, 1, 9999);
+                });
+
+                // disable scroll wheel
+                qtyInput.addEventListener('wheel', e => e.preventDefault(), {
                     passive: false
                 });
             });

@@ -89,7 +89,7 @@
                                     <tr class="text-muted text-uppercase small">
                                         <th>Sr. No</th>
                                         <th>Name</th>
-                                        <th>Sizes, Price & Stock</th>
+                                        <th>Sizes and Price</th>
                                         <th>Main Image</th>
                                         <th>Images</th>
                                         <th>Category</th>
@@ -112,58 +112,49 @@
 
                                                 <!-- Hidden HTML for Sizes -->
                                                 <div class="sizes-html d-none">
-                                                    @foreach ($product->sizes as $size)
-                                                        <div class="size-info mb-2"
-                                                            style="border-radius: 8px; background-color: #f8f9fa; padding: 8px 12px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);">
-                                                            <div class="d-flex">
-                                                                <!-- Size -->
-                                                                <div>
-                                                                    <span class="badge bg-primary p-2"
-                                                                        style="font-weight: 500; border-radius: 15px; margin-right: 6px;">{{ $size->sizeItem->size }}</span>
-                                                                </div>
+                                                    <div class="d-flex flex-wrap gap-3">
+                                                        @foreach ($product->sizes as $size)
+                                                            <div class="size-card d-flex align-items-center gap-3 p-3 shadow-sm rounded-3 bg-light"
+                                                                style="min-width: 200px; border: 1px solid #e0e0e0;">
 
-                                                                <!-- Price -->
-                                                                <div>
-                                                                    <span class="badge bg-success ml-5"
-                                                                        style="font-weight: 500; border-radius: 15px; margin-right: 6px;">Rs.
-                                                                        {{ number_format($size->price) }}</span>
-                                                                </div>
+                                                                <!-- Size Badge -->
+                                                                <span class="badge bg-primary px-3 py-2"
+                                                                    style="font-size: 0.9rem; border-radius: 12px;">
+                                                                    {{ $size->sizeItem->size }}
+                                                                </span>
 
-                                                                <div>
-                                                                    @if ($size->stock > 0)
-                                                                        <span class="badge bg-info"
-                                                                            style="font-weight: 500; border-radius: 15px;">{{ number_format($size->stock) }}
-                                                                            in stock</span>
-                                                                    @else
-                                                                        <span class="badge bg-danger"
-                                                                            style="font-weight: 500; border-radius: 15px;">Out
-                                                                            of Stock</span>
-                                                                    @endif
-                                                                </div>
+                                                                <!-- Price Badge -->
+                                                                <span class="badge bg-success px-3 py-2"
+                                                                    style="font-size: 0.9rem; border-radius: 12px;">
+                                                                    Rs. {{ number_format($size->price) }}
+                                                                </span>
+
+                                                                {{-- Stock (optional, if needed later) --}}
+                                                                {{--
+                <span class="badge {{ $size->stock > 0 ? 'bg-info' : 'bg-danger' }} px-3 py-2"
+                      style="font-size: 0.9rem; border-radius: 12px;">
+                    {{ $size->stock > 0 ? $size->stock . ' in stock' : 'Out of stock' }}
+                </span>
+                --}}
                                                             </div>
-                                                        </div>
-                                                    @endforeach
+                                                        @endforeach
+                                                    </div>
                                                 </div>
                                             </td>
-
-
-
-
-                                            <!-- Main Image Thumbnail -->
                                             <td>
                                                 @php
                                                     $mainImage = $product->images->firstWhere('is_primary', true);
                                                 @endphp
                                                 @if ($mainImage && $mainImage->image_path)
                                                     <img src="{{ asset('storage/' . $mainImage->image_path) }}"
-                                                        alt="Main Image" class="rounded"
+                                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                                            title="{{ $product->name }}"
+                                                        alt="{{ $product->name }}" class="rounded-circle"
                                                         style="object-fit: cover; width: 60px; height: 60px;">
                                                 @else
                                                     <span class="text-muted">No Image</span>
                                                 @endif
                                             </td>
-
-                                            <!-- Image Thumbnails (Exclude Main Image, Max 3) -->
                                             <td>
                                                 <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
                                                     @php
@@ -171,7 +162,6 @@
                                                             return !$img->is_primary;
                                                         });
                                                     @endphp
-
                                                     @foreach ($otherImages->take(3) as $image)
                                                         <li data-bs-toggle="tooltip" data-bs-placement="top"
                                                             title="{{ $product->name }}">
@@ -243,21 +233,54 @@
 
                         <!-- Modal for Viewing Product Sizes -->
                         <div class="modal fade" id="productSizesModal" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">Product Sizes</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                                <div class="modal-content shadow-lg border-0 rounded-3">
+                                    <!-- Header -->
+                                    <div class="modal-header bg-primary text-white">
+                                        <h5 class="modal-title text-white">
+                                            <i class="bi bi-rulers me-2"></i> Product Sizes
+                                        </h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                                             aria-label="Close"></button>
                                     </div>
-                                    <div class="modal-body p-0"></div>
+
+                                    <!-- Body -->
+                                    <div class="modal-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover align-middle mb-0">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Size</th>
+                                                        <th>Price (Rs.)</th>
+                                                        <th>Stock</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="product-sizes-table">
+                                                    <!-- Sizes will be injected dynamically via JS -->
+                                                    <tr>
+                                                        <td colspan="3" class="text-center text-muted py-4">
+                                                            <em>No sizes available</em>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <!-- Footer -->
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                            <i class="bi bi-x-circle me-1"></i> Close
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
+
                         <!-- Add Product Modal -->
-                        <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel"
-                            aria-hidden="true">
+                        <div class="modal fade" id="addProductModal" tabindex="-1"
+                            aria-labelledby="addProductModalLabel" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <form action="{{ route('products.store') }}" method="POST" id="product-form"
@@ -286,9 +309,9 @@
                                                         <input type="number" name="sizes[0][price]"
                                                             class="form-control mb-2" placeholder="Price (Rs.)"
                                                             step="0.01" required>
-                                                        <input type="number" name="sizes[0][stock]"
+                                                        {{-- <input type="number" name="sizes[0][stock]"
                                                             class="form-control mb-2" placeholder="Stock Quantity"
-                                                            required>
+                                                            required> --}}
                                                         <!-- Cross button to remove size -->
                                                         <button type="button"
                                                             class="btn btn-danger btn-sm remove-size-btn"
@@ -329,6 +352,12 @@
                                                     {!! $renderedCategories !!}
                                                 </div>
                                             </div>
+
+
+
+
+
+
                                             <!-- Footer -->
                                             <div class="modal-footer">
                                                 <button type="button" class="btn btn-outline-secondary"
@@ -432,7 +461,6 @@
                 inputStock.type = 'number';
                 inputStock.name = `sizes[${index}][stock]`;
                 inputStock.classList.add('form-control', 'mb-2');
-                inputStock.placeholder = 'Stock Quantity';
                 inputStock.required = true;
 
                 // Create the remove button (cross icon)
@@ -454,7 +482,7 @@
                 // Append select, price input, stock input, and remove button to the new size entry div
                 newSizeEntry.appendChild(select);
                 newSizeEntry.appendChild(inputPrice);
-                newSizeEntry.appendChild(inputStock);
+                // newSizeEntry.appendChild(inputStock);
                 newSizeEntry.appendChild(removeBtn);
 
                 // Append the new size entry to the size container

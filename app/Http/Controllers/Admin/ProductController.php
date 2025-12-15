@@ -1,23 +1,20 @@
 <?php
-
 namespace App\Http\Controllers\Admin;
 
-use Exception;
-use App\Models\Product;
+use App\Http\Controllers\Controller;
 use App\Models\Category;
-use App\Models\ProductSize;
+use App\Models\Product;
 use App\Models\ProductImage;
-use Illuminate\Http\Request;
+use App\Models\ProductSize;
 use App\Models\ProductSizeItem;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
 use RealRashid\SweetAlert\Facades\Alert;
 
 class ProductController extends Controller
 {
-
 
     public function renderCategories($categories, $selected = [])
     {
@@ -31,7 +28,7 @@ class ProductController extends Controller
             $html .= '</label>';
 
             if ($category->children->count()) {
-                $html .= $this->renderCategories($category->children, $selected);  // Recursively render children
+                $html .= $this->renderCategories($category->children, $selected); // Recursively render children
             }
             $html .= '</li>';
         }
@@ -41,7 +38,9 @@ class ProductController extends Controller
 
     public function index()
     {
-        $products   = Product::with(['images', 'category', 'sizes'])->get();
+        $products = Product::with(['images', 'category', 'sizes' => function ($q) {
+            $q->where('is_active', true); // 👈 sirf active sizes dikhayenge
+        }])->get();
 
         // Sirf root categories + unke children recursive
         $categories = Category::with('children.children')
@@ -49,29 +48,26 @@ class ProductController extends Controller
             ->orderBy('name')
             ->get();
 
-        $sizes      = ProductSizeItem::all();
+        $sizes              = ProductSizeItem::all();
         $renderedCategories = $this->renderCategories($categories, []);
         return view('admin.products.show-product', compact('products', 'categories', 'sizes', 'renderedCategories'));
     }
 
-
-
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:products,name',
-            'categories' => 'required|array',
-            'categories.*' => 'exists:categories,id',
-            'desc' => 'nullable|string',
-            'main_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'sizes.*.size' => 'required|exists:product_size_items,id',
+            'name'          => 'required|string|max:255|unique:products,name',
+            'categories'    => 'required|array',
+            'categories.*'  => 'exists:categories,id',
+            'desc'          => 'nullable|string',
+            'main_image'    => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'images.*'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'sizes.*.size'  => 'required|exists:product_size_items,id',
             'sizes.*.price' => 'required|numeric',
-            'sizes.*.stock' => 'required|integer|min:0', // Validate stock
+            // 'sizes.*.stock' => 'required|integer|min:0', // Validate stock
         ], [
             'name.unique' => 'Product already exists in the database.',
         ]);
-
 
         DB::beginTransaction();
 
@@ -81,25 +77,28 @@ class ProductController extends Controller
                 'name' => $request->name,
                 'desc' => $request->desc,
             ]);
+
             // multiple categories attach
             if ($request->has('categories')) {
                 $product->categories()->attach($request->categories);
             }
+
             // Step 2: Save sizes for the product with stock and price
             if ($request->has('sizes')) {
                 foreach ($request->sizes as $size) {
                     ProductSize::create([
                         'product_id' => $product->id,
-                        'size_id' => $size['size'],
-                        'price' => $size['price'],
-                        'stock' => $size['stock'],  // Store stock for each size
+                        'size_id'    => $size['size'],
+                        'price'      => $size['price'],
+                        'stock'      => 0,    // Store stock for each size
+                        'is_active'  => true, // 👈 added for consistency
                     ]);
                 }
             }
 
             // Step 3: Save main image
             if ($request->hasFile('main_image')) {
-                $main = $request->file('main_image');
+                $main     = $request->file('main_image');
                 $mainName = time() . '_main.' . $main->extension();
                 $main->storeAs('public/products', $mainName);
 
@@ -124,13 +123,14 @@ class ProductController extends Controller
                     ]);
                 }
             }
+
             DB::commit();
             return response()->json(['success' => true, 'message' => 'Product added successfully!']);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to add product.'
+                'message' => 'Failed to add product.',
             ], 500);
         }
     }
@@ -138,24 +138,34 @@ class ProductController extends Controller
     public function edit($id)
     {
         try {
-            // Fetch the product with its sizes, images, and category
-            $product = Product::with(['images', 'sizes', 'categories'])->findOrFail($id);
+            // ✅ Fetch the product with only active sizes, plus images and categories
+            $product = Product::with([
+                'images',
+                'categories',
+                'sizes' => function ($query) {
+                    $query->where('is_active', true);
+                },
+            ])->findOrFail($id);
 
+            // ✅ Get categories
             $categories = Category::with('children')->whereNull('parent_id')->get();
             $sizes      = ProductSizeItem::all();
 
             $selectedCategories = $product->categories->pluck('id')->toArray();
-            // Pass selected sizes (including price and stock) to the view
+
+            // ✅ Pass selected sizes (include id, size_id and price for form binding)
             $selectedSizes = $product->sizes->map(function ($size) {
                 return [
-                    'size_id' => $size->size_id, // Size ID
-                    'price' => $size->price,     // Price for this size
-                    'stock' => $size->stock,     // Stock for this size
+                    'id'      => $size->id,      // 👈 Important: we need ID to update later
+                    'size_id' => $size->size_id, // Size reference
+                    'price'   => $size->price,   // Price
                 ];
             });
+
             $renderedCategories = $this->renderCategories($categories, $selectedCategories);
 
             return view('admin.products.form', compact('product', 'categories', 'sizes', 'selectedSizes', 'renderedCategories'));
+
         } catch (\Exception $e) {
             Log::error('Product Edit Error: ' . $e->getMessage());
             Alert::error('Error', 'Product not found.');
@@ -163,22 +173,20 @@ class ProductController extends Controller
         }
     }
 
-
     public function update(Request $request, $id)
     {
         try {
             // ✅ Validation
             $request->validate([
-                'name'         => 'required|string|max:255',
-                'desc'         => 'nullable|string',
-                'categories'   => 'required|array',
-                'categories.*' => 'exists:categories,id',
-                'sizes'        => 'nullable|array',
-                'sizes.*.size' => 'required|exists:product_size_items,id',
+                'name'          => 'required|string|max:255',
+                'desc'          => 'nullable|string',
+                'categories'    => 'required|array',
+                'categories.*'  => 'exists:categories,id',
+                'sizes'         => 'nullable|array',
+                'sizes.*.size'  => 'required|exists:product_size_items,id',
                 'sizes.*.price' => 'required|numeric|min:0',
-                'sizes.*.stock' => 'required|integer|min:0',
-                'main_image'   => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-                'images.*'     => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'main_image'    => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'images.*'      => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             ]);
 
             // ✅ Find product
@@ -190,28 +198,45 @@ class ProductController extends Controller
                 'desc' => $request->desc,
             ]);
 
-            // ✅ Sync categories (belongsToMany)
-            if ($request->has('categories')) {
-                $product->categories()->sync($request->categories);
-            }
+            // ✅ Sync categories
+            $product->categories()->sync($request->categories);
 
-            // ✅ Update sizes (hasMany style)
-            // Update sizes (custom pivot handling)
+            // ✅ Handle sizes
+            $existingSizeIds = $product->sizes->pluck('id')->toArray();
+            $submittedIds    = [];
+
             if ($request->has('sizes')) {
-                // Clear old sizes
-                $product->sizes()->delete();
-
                 foreach ($request->sizes as $sizeData) {
-                    if (!empty($sizeData['size'])) {
-                        $product->sizes()->create([
-                            'size_id'    => $sizeData['size'],   // 👈 yeh zaroori hai
-                            'price'      => $sizeData['price'],
-                            'stock'      => $sizeData['stock'],
+                    // Check by product_id + size_id (not only id)
+                    $productSize = $product->sizes()
+                        ->where('size_id', $sizeData['size'])
+                        ->first();
+
+                    if ($productSize) {
+                        // Update existing (even if inactive before)
+                        $productSize->update([
+                            'price'     => $sizeData['price'],
+                            'is_active' => true,
                         ]);
+                        $submittedIds[] = $productSize->id;
+                    } else {
+                        // Create new if not exists at all
+                        $newSize = $product->sizes()->create([
+                            'size_id'   => $sizeData['size'],
+                            'price'     => $sizeData['price'],
+                            'stock'     => 0,
+                            'is_active' => true,
+                        ]);
+                        $submittedIds[] = $newSize->id;
                     }
                 }
             }
 
+            // ✅ Deactivate removed sizes
+            $toDeactivate = array_diff($existingSizeIds, $submittedIds);
+            if (! empty($toDeactivate)) {
+                $product->sizes()->whereIn('id', $toDeactivate)->update(['is_active' => false]);
+            }
 
             // ✅ Replace main image if uploaded
             if ($request->hasFile('main_image')) {
@@ -235,16 +260,13 @@ class ProductController extends Controller
 
             return redirect()->route('products')
                 ->with('success', 'Product updated successfully.');
+
         } catch (\Exception $e) {
             Log::error('Product update error: ' . $e->getMessage());
             return back()->withInput()
                 ->with('error', 'Failed to update product. Please try again later.');
         }
     }
-
-
-
-
 
     public function deleteImage($id)
     {
@@ -263,25 +285,34 @@ class ProductController extends Controller
         }
     }
 
-
-
-
-
     public function destroy($id)
     {
+        DB::beginTransaction();
+
         try {
             $product = Product::findOrFail($id);
+
+            // Delete related images from storage
+            foreach ($product->images as $image) {
+                if (Storage::exists('public/' . $image->image_path)) {
+                    Storage::delete('public/' . $image->image_path);
+                }
+            }
+
+            // Delete product (images, sizes, categories will be handled if relations are set with cascade or manually)
             $product->delete();
 
             DB::commit();
 
             Alert::success('Success', 'Product deleted successfully!');
             return redirect()->route('products');
-        } catch (Exception $e) {
+
+        } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Product Delete Error: ' . $e->getMessage());
             Alert::error('Error', 'Failed to delete product.');
             return back();
         }
     }
+
 }

@@ -1,24 +1,23 @@
 <?php
 
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Artisan;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ContactMessageController;
+use App\Http\Controllers\Admin\InstructionGuideController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Index\CartController;
-use App\Http\Controllers\Admin\AdminController;
-use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Index\IndexController;
-use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\PermissionController;
-use App\Http\Controllers\Admin\ContactMessageController;
-use App\Http\Controllers\Admin\InstructionGuideController;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 
-
-
-Route::get('admin/login', [AdminController::class, 'LoginForm'])->name('login');
-Route::post('admin/login', [AdminController::class, 'login'])->name('login.submit');
 
 Route::get('/', [IndexController::class, 'index'])->name('home');
 
@@ -30,110 +29,120 @@ Route::get('/uniform/{name}', [IndexController::class, 'category'])->name('categ
 
 Route::get('size-chart', [IndexController::class, 'size_chart'])->name('SizeChart');
 Route::get('contact-us', [IndexController::class, 'contactus'])->name('contactus');
+Route::post('/contact', [IndexController::class, 'submit'])->name('contact.submit');
 Route::get('washing-instructions', [IndexController::class, 'washing_instructions'])->name('washingInstructions');
 Route::get('accessories', [IndexController::class, 'accessories'])->name('accessories');
-Route::post('/cart/bulk-add', [IndexController::class, 'bulkAdd'])->name('cart.bulkAdd');
-
 
 Route::get('product/details/{slug}', [IndexController::class, 'product_details'])->name('product.details');
-Route::get('cart/details', [IndexController::class, 'cartdetails'])->name('cartdetails');
-Route::patch('/cart/{cart}/quantity', [IndexController::class, 'ajaxUpdateQuantity'])
-    ->name('cart.quantity');
 
-Route::get('checkout', [IndexController::class, 'checkout'])->name('checkout');
-Route::post('/checkout/place-order', [IndexController::class, 'place'])->name('order.place');
 Route::get('/thank-you/{order}', [IndexController::class, 'thankyou'])->name('order.thankyou');
-Route::post('/contact', [IndexController::class, 'submit'])->name('contact.submit');
-
 
 // Cart Routes
-Route::get('cart', [CartController::class, 'index'])->name('cart.index'); // Cart page view
-Route::post('cart/add', [CartController::class, 'add'])->name('cart.add'); // Add to cart
+Route::get('cart', [CartController::class, 'index'])->name('cart.index');                // Cart page view
+Route::post('cart/add', [CartController::class, 'add'])->name('cart.add');               // Add to cart
 Route::post('cart/update/{id}', [CartController::class, 'update'])->name('cart.update'); // Update quantity/size
 Route::delete('/cart/remove/{id}', [CartController::class, 'ajaxRemove'])
     ->name('cart.ajaxRemove');
 
+Route::post('/cart/bulk-add', [CartController::class, 'bulkAdd'])->name('cart.bulkAdd');
+Route::get('cart/details', [CartController::class, 'cartdetails'])->name('cartdetails');
+Route::patch('/cart/{cart}/quantity', [CartController::class, 'ajaxUpdateQuantity'])
+    ->name('cart.quantity');
+Route::get('checkout', [CartController::class, 'checkout'])->name('checkout');
+Route::post('/checkout/place-order', [CartController::class, 'place'])->name('order.place');
 
+Route::middleware(['admin.redirect'])->group(function () {
 
+    // Naya: /admin route ko group ke andar daal dein.
+    // Middleware ab isko handle karega.
+    Route::get('admin', function () {
+        // Yeh line zaroori nahi, lekin rakh sakte hain.
+        // Agar middleware se redirect na ho paya, toh yeh redirect kar dega.
+        // Lekin middleware ke baad yeh line hit nahi hogi.
+        return redirect()->route('login');
+    });
 
-Route::middleware(['auth'])->group(function () {
-    Route::get('admin/dashboard', [AdminController::class, 'index'])->name('dashboard');
-    Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
-    Route::get('/search', [AdminController::class, 'search'])->name('global.search');
+    Route::get('admin/login', [AdminController::class, 'LoginForm'])->name('login');
+    Route::post('admin/login', [AdminController::class, 'login'])->name('login.submit');
+    Route::middleware(['auth'])->group(function () {
+        Route::get('admin/dashboard', [AdminController::class, 'index'])->name('dashboard');
+        Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
+        Route::get('/search', [AdminController::class, 'search'])->name('global.search');
 
-    // Show All Categories
-    Route::get('all-categories', [CategoryController::class, 'index'])->name('categories');
-    Route::post('store-category', [CategoryController::class, 'store'])->name('categories.store');
-    Route::get('edit-category/{id}', [CategoryController::class, 'edit'])->name('categories.edit');
-    Route::post('update-category/{id}', [CategoryController::class, 'update'])->name('categories.update');
-    Route::get('delete-category/{id}', [CategoryController::class, 'destroy'])->name('categories.delete');
+        // Show All Categories
+        Route::get('all-categories', [CategoryController::class, 'index'])->name('categories');
+        Route::post('store-category', [CategoryController::class, 'store'])->name('categories.store');
+        Route::get('edit-category/{id}', [CategoryController::class, 'edit'])->name('categories.edit');
+        Route::post('update-category/{id}', [CategoryController::class, 'update'])->name('categories.update');
+        Route::get('delete-category/{id}', [CategoryController::class, 'destroy'])->name('categories.delete');
 
-    // Products Routes
-    Route::get('/products', [ProductController::class, 'index'])->name('products');
-    Route::delete('/product-image/{id}', [ProductController::class, 'deleteImage'])->name('product.image.delete');
-    Route::post('/products/store', [ProductController::class, 'store'])->name('products.store');
-    Route::get('/products/edit/{id}', [ProductController::class, 'edit'])->name('products.edit');
-    Route::post('/products/update/{id}', [ProductController::class, 'update'])->name('products.update');
-    Route::get('/products/delete/{id}', [ProductController::class, 'destroy'])->name('products.delete');
+        // Products Routes
+        Route::get('/products', [ProductController::class, 'index'])->name('products');
+        Route::delete('/product-image/{id}', [ProductController::class, 'deleteImage'])->name('product.image.delete');
+        Route::post('/products/store', [ProductController::class, 'store'])->name('products.store');
+        Route::get('/products/edit/{id}', [ProductController::class, 'edit'])->name('products.edit');
+        Route::post('/products/update/{id}', [ProductController::class, 'update'])->name('products.update');
+        Route::get('/products/delete/{id}', [ProductController::class, 'destroy'])->name('products.delete');
 
+        //Order Management
+        Route::get('/orders', [OrderController::class, 'index'])->name('orders');
+        Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
+        Route::post('/orders/{id}/update', [OrderController::class, 'update'])->name('orders.update');
+        Route::get('/orders/delete/{id}', [OrderController::class, 'destroy'])->name('orders.delete');
 
-    //Order Management
-    Route::get('/orders', [OrderController::class, 'index'])->name('orders');
-    Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
-    Route::post('/orders/{id}/update', [OrderController::class, 'update'])->name('orders.update');
-    Route::get('/orders/delete/{id}', [OrderController::class, 'destroy'])->name('orders.delete');
+        Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('admin.orders.status');
+        Route::patch('orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('admin.orders.payment');
 
-    Route::patch('orders/{order}/status',  [OrderController::class, 'updateStatus'])->name('admin.orders.status');
-    Route::patch('orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('admin.orders.payment');
+        //Instructions Routes
+        Route::get('/instruction-guides', [InstructionGuideController::class, 'index'])->name('instructionguides');
+        Route::post('/instruction-guides/store', [InstructionGuideController::class, 'store'])->name('instructionguides.store');
+        Route::get('/instruction-guides/edit/{id}', [InstructionGuideController::class, 'edit'])->name('instructionguides.edit');
+        Route::post('/instruction-guides/update/{id}', [InstructionGuideController::class, 'update'])->name('instructionguides.update');
+        Route::get('/instruction-guides/delete/{id}', [InstructionGuideController::class, 'destroy'])->name('instructionguides.delete');
 
-    //Instructions Routes
-    Route::get('/instruction-guides', [InstructionGuideController::class, 'index'])->name('instructionguides');
-    Route::post('/instruction-guides/store', [InstructionGuideController::class, 'store'])->name('instructionguides.store');
-    Route::get('/instruction-guides/edit/{id}', [InstructionGuideController::class, 'edit'])->name('instructionguides.edit');
-    Route::post('/instruction-guides/update/{id}', [InstructionGuideController::class, 'update'])->name('instructionguides.update');
-    Route::get('/instruction-guides/delete/{id}', [InstructionGuideController::class, 'destroy'])->name('instructionguides.delete');
+        //Contact Messages
+        Route::get('/contact-messages', [ContactMessageController::class, 'index'])->name('contactmessages');
+        Route::get('/contact-messages/delete/{id}', [ContactMessageController::class, 'destroy'])->name('contactmessages.delete');
 
-    //Contact Messages
-    Route::get('/contact-messages', [ContactMessageController::class, 'index'])->name('contactmessages');
-    Route::get('/contact-messages/delete/{id}', [ContactMessageController::class, 'destroy'])->name('contactmessages.delete');
+        // Route::post('/contact', [ContactMessageController::class, 'submit'])->name('contact.submit');
 
-    // Route::post('/contact', [ContactMessageController::class, 'submit'])->name('contact.submit');
+        // Index - All Users
+        Route::get('/users', [UserController::class, 'index'])->name('users');
+        Route::post('/users/store', [UserController::class, 'store'])->name('users.store');
+        Route::get('/users/edit/{id}', [UserController::class, 'edit'])->name('users.edit');
+        Route::post('/users/update/{id}', [UserController::class, 'update'])->name('users.update');
+        Route::get('/users/delete/{id}', [UserController::class, 'destroy'])->name('users.delete');
 
+        //Roles Management
+        Route::get('/roles', [RoleController::class, 'index'])->name('roles');
+        Route::get('/roles/create', [RoleController::class, 'create'])->name('roles.create');
+        Route::post('/roles/store', [RoleController::class, 'store'])->name('roles.store');
+        Route::get('/roles/{id}/edit', [RoleController::class, 'edit'])->name('roles.edit');
+        Route::post('/roles/{id}/update', [RoleController::class, 'update'])->name('roles.update');
+        Route::get('/roles/{id}/delete', [RoleController::class, 'destroy'])->name('roles.delete');
 
-    // Index - All Users
-    Route::get('/users', [UserController::class, 'index'])->name('users');
-    Route::post('/users/store', [UserController::class, 'store'])->name('users.store');
-    Route::get('/users/edit/{id}', [UserController::class, 'edit'])->name('users.edit');
-    Route::post('/users/update/{id}', [UserController::class, 'update'])->name('users.update');
-    Route::get('/users/delete/{id}', [UserController::class, 'destroy'])->name('users.delete');
+        //Permissions Management
+        // routes/web.php
+        Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions');
+        Route::post('/permissions/store', [PermissionController::class, 'store'])->name('permissions.store');
+        Route::get('/permissions/edit/{id}', [PermissionController::class, 'edit'])->name('permissions.edit');
+        Route::post('/permissions/update/{id}', [PermissionController::class, 'update'])->name('permissions.update');
+        Route::get('/permissions/delete/{id}', [PermissionController::class, 'destroy'])->name('permissions.delete');
 
-    //Roles Management
-    Route::get('/roles', [RoleController::class, 'index'])->name('roles');
-    Route::get('/roles/create', [RoleController::class, 'create'])->name('roles.create');
-    Route::post('/roles/store', [RoleController::class, 'store'])->name('roles.store');
-    Route::get('/roles/{id}/edit', [RoleController::class, 'edit'])->name('roles.edit');
-    Route::post('/roles/{id}/update', [RoleController::class, 'update'])->name('roles.update');
-    Route::get('/roles/{id}/delete', [RoleController::class, 'destroy'])->name('roles.delete');
-
-    //Permissions Management
-    // routes/web.php
-    Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions');
-    Route::post('/permissions/store', [PermissionController::class, 'store'])->name('permissions.store');
-    Route::get('/permissions/edit/{id}', [PermissionController::class, 'edit'])->name('permissions.edit');
-    Route::post('/permissions/update/{id}', [PermissionController::class, 'update'])->name('permissions.update');
-    Route::get('/permissions/delete/{id}', [PermissionController::class, 'destroy'])->name('permissions.delete');
+        Route::get('clear-cache', [AdminController::class, 'cacheclear'])->name('cacheclear');
+    });
 });
 
-
+Route::get('clear-cache', [IndexController::class, 'cacheclear'])->name('cacheclear');
 Route::get('/setup-project', function () {
     // Migrate fresh
     Artisan::call('migrate:fresh', [
-        '--force' => true
+        '--force' => true,
     ]);
 
     // Seed database
     Artisan::call('db:seed', [
-        '--force' => true
+        '--force' => true,
     ]);
 
     // Storage link
@@ -226,18 +235,49 @@ Route::get('/insert-data', function () {
         ['id' => 31, 'name' => 'IB', 'parent_id' => 20, 'created_at' => '2025-08-01 23:16:49', 'updated_at' => '2025-08-01 23:16:49'],
         ['id' => 32, 'name' => 'PYP', 'parent_id' => 31, 'created_at' => '2025-08-01 23:17:51', 'updated_at' => '2025-08-01 23:17:51'],
         ['id' => 33, 'name' => 'MYP', 'parent_id' => 31, 'created_at' => '2025-08-01 23:18:13', 'updated_at' => '2025-08-01 23:18:13'],
-        ['id' => 34, 'name' => 'DP', 'parent_id' => 31, 'created_at' => '2025-08-01 23:19:14', 'updated_at' => '2025-08-01 23:18:14']
+        ['id' => 34, 'name' => 'DP', 'parent_id' => 31, 'created_at' => '2025-08-01 23:19:14', 'updated_at' => '2025-08-01 23:18:14'],
     ]);
     return "✅ Data inserted successfully!";
 });
 
+Route::get('/create-payment-mode-table', function () {
+    if (! Schema::hasTable('payment_modes')) {
+        Schema::create('payment_modes', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->timestamps();
+        });
+        return "✅ payment_modes table created successfully!";
+    }
+    return "⚠️ payment_modes table already exists.";
+});
 
-Route::get('/cache-clear', function () {
-    Artisan::call('config:cache');
-    Artisan::call('route:cache');
-    Artisan::call('view:clear');
-    Artisan::call('cache:clear');
+// Route::get('/create-visitors-table', function () {
+//     try {
+//         Artisan::call('migrate', [
+//             '--path' => 'database/migrations/2025_08_25_095321_create_visitors_table.php',
+//             '--force' => true
+//         ]);
+//         return "✅ Visitors table migration completed successfully!";
+//     } catch (\Exception $e) {
+//         return "❌ Error: " . $e->getMessage();
+//     }
+// });
 
-    return "✅ All cache commands executed successfully!";
-})->name('cacheclear');
+Route::get('/composer-dump-autoload', function () {
+    try {
+        // Run dump-autoload
+        Artisan::call('dump-autoload');
 
+        return "<pre>" . Artisan::output() . "</pre>";
+    } catch (\Exception $e) {
+        return "❌ Error: " . $e->getMessage();
+    }
+});
+
+Route::get('/migrate', function () {
+
+    Artisan::call('migrate');
+
+    return "✅Migration successfully!";
+});

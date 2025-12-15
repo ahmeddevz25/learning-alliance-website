@@ -40,8 +40,6 @@
         </div>
         <main id="MainContent" class="content-for-layout">
             <div class="contact-page">
-
-                <!-- contact box start -->
                 <div class="contact-box mt-100">
                     <div class="contact-box-wrapper">
                         <div class="container">
@@ -131,7 +129,7 @@
                                         <div class="col-md-6 col-12">
                                             <fieldset>
                                                 <input type="text" name="name" value="{{ old('name') }}"
-                                                    placeholder="Full name" required>
+                                                    placeholder="Full Name" required>
                                             </fieldset>
                                         </div>
                                         <div class="col-md-6 col-12">

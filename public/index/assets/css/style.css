@@ -1571,12 +1571,12 @@ button,
     width: 100px;
     -ms-border: 1px solid rgba(0, 0, 0, 0.1) !important;
     -webkit-border: 1px solid rgba(0, 0, 0, 0.1) !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid rgba(37, 32, 32, 0.1) !important;
 }
 
 .quantity .qty-btn {
     width: 25px;
-    padding: 4px 5px 6px;
+    padding: 4px 5px 6px 3px;
     cursor: pointer;
 }
 
@@ -6432,7 +6432,7 @@ blockquote {
 }
 
 .footer-top {
-    padding: 95px 0 100px;
+    padding: 50px 100px;
 }
 
 .footer-bottom-menu {
