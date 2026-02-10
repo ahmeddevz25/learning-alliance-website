@@ -52,13 +52,7 @@ Route::get('checkout', [CartController::class, 'checkout'])->name('checkout');
 Route::post('/checkout/place-order', [CartController::class, 'place'])->name('order.place');
 
 Route::middleware(['admin.redirect'])->group(function () {
-
-    // Naya: /admin route ko group ke andar daal dein.
-    // Middleware ab isko handle karega.
     Route::get('admin', function () {
-        // Yeh line zaroori nahi, lekin rakh sakte hain.
-        // Agar middleware se redirect na ho paya, toh yeh redirect kar dega.
-        // Lekin middleware ke baad yeh line hit nahi hogi.
         return redirect()->route('login');
     });
 
@@ -104,8 +98,6 @@ Route::middleware(['admin.redirect'])->group(function () {
         Route::get('/contact-messages', [ContactMessageController::class, 'index'])->name('contactmessages');
         Route::get('/contact-messages/delete/{id}', [ContactMessageController::class, 'destroy'])->name('contactmessages.delete');
 
-        // Route::post('/contact', [ContactMessageController::class, 'submit'])->name('contact.submit');
-
         // Index - All Users
         Route::get('/users', [UserController::class, 'index'])->name('users');
         Route::post('/users/store', [UserController::class, 'store'])->name('users.store');
@@ -129,11 +121,11 @@ Route::middleware(['admin.redirect'])->group(function () {
         Route::post('/permissions/update/{id}', [PermissionController::class, 'update'])->name('permissions.update');
         Route::get('/permissions/delete/{id}', [PermissionController::class, 'destroy'])->name('permissions.delete');
 
-        Route::get('clear-cache', [AdminController::class, 'cacheclear'])->name('cacheclear');
+        Route::get('clear-cache', [AdminController::class, 'clearcache'])->name('clearcache');
     });
 });
 
-Route::get('clear-cache', [IndexController::class, 'cacheclear'])->name('cacheclear');
+Route::get('clear-cache', [IndexController::class, 'clearcache'])->name('clearcache');
 Route::get('/setup-project', function () {
     // Migrate fresh
     Artisan::call('migrate:fresh', [

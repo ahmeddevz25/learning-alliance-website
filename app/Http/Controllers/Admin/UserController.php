@@ -11,12 +11,19 @@ use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:user management')->only('index');
+        $this->middleware('permission:user add')->only('store');
+        $this->middleware('permission:user edit')->only('edit', 'update');
+        $this->middleware('permission:user delete')->only('destroy');
+    }
 
     public function index()
     {
         $users = User::with('roles')->get();
         $roles = Role::all(); // Spatie Role model
-        return view('admin.users-managment.show-users', compact('users','roles'));
+        return view('admin.users-managment.show-users', compact('users', 'roles'));
     }
 
     public function create()

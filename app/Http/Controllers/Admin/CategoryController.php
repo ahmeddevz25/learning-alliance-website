@@ -12,6 +12,14 @@ use RealRashid\SweetAlert\Facades\Alert;
 
 class CategoryController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:categories')->only('index');
+        $this->middleware('permission:category add')->only('store');
+        $this->middleware('permission:category edit')->only('edit', 'update');
+        $this->middleware('permission:category delete')->only('destroy');
+    }
+
     public function index()
     {
         try {

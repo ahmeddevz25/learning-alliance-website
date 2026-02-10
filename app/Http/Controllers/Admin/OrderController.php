@@ -9,6 +9,12 @@ use App\Http\Controllers\Controller;
 
 class OrderController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:orders')->only('index', 'show');
+        $this->middleware('permission:order delete')->only('destroy');
+    }
+
     public function index()
     {
         $orders = Order::with(['items.sizeItem', 'items.product'])->get();

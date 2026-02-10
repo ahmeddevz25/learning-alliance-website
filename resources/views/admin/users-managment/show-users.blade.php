@@ -1,41 +1,5 @@
 @extends('admin.layouts')
 @section('content')
-    <html lang="en" class="light-style layout-menu-fixed" dir="ltr" data-theme="theme-default"
-        data-assets-path="../assets/" data-template="vertical-menu-template-free">
-    <style>
-        /* Force Toastr styles in case theme is overriding */
-
-        .toast-success {
-            background-color: #51A351 !important;
-        }
-
-        .toast-error {
-            background-color: #BD362F !important;
-        }
-
-        .toast-info {
-            background-color: #2F96B4 !important;
-        }
-
-        .toast-warning {
-            background-color: #F89406 !important;
-        }
-
-        .table th,
-        .table td {
-            vertical-align: middle;
-        }
-
-        .table-striped>tbody>tr:nth-of-type(odd) {
-            background-color: #f9f9fb;
-        }
-
-        .table-hover tbody tr:hover {
-            background-color: #f1f4f9;
-            transition: background-color 0.2s ease-in-out;
-        }
-    </style>
-
     <body>
         @include('sweetalert::alert')
         <!-- Layout wrapper -->
@@ -172,10 +136,4 @@
         </div>
         <div class="layout-overlay layout-menu-toggle"></div>
         </div>
-
-
-        <script async defer src="https://buttons.github.io/buttons.js"></script>
-    </body>
-
-    </html>
 @endsection

@@ -10,6 +10,14 @@ use Illuminate\Support\Facades\Log;
 
 class PermissionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:permission management')->only('index');
+        $this->middleware('permission:permission add')->only('store');
+        $this->middleware('permission:permission edit')->only('edit', 'update');
+        $this->middleware('permission:permission delete')->only('destroy');
+    }
+
     public function index()
     {
         $permissions = Permission::all();

@@ -12,6 +12,13 @@ use Illuminate\Support\Facades\Storage;
 class InstructionGuideController extends Controller
 {
 
+    public function __construct()
+    {
+        $this->middleware('permission:instructions')->only('index');
+        $this->middleware('permission:instruction add')->only('store');
+        $this->middleware('permission:instruction edit')->only('edit', 'update');
+        $this->middleware('permission:instruction delete')->only('destroy');
+    }
 
     public function index()
     {
