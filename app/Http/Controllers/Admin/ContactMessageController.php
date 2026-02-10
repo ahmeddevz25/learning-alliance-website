@@ -10,6 +10,12 @@ use Illuminate\Support\Facades\Mail;
 
 class ContactMessageController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:contactmessages')->only('index');
+        $this->middleware('permission:contactmessages delete')->only('destroy');
+    }
+
     public function index()
     {
         $messages = ContactMessage::latest()->get();

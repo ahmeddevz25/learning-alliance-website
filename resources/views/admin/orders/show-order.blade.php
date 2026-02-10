@@ -1,10 +1,5 @@
 @extends('admin.layouts')
 @section('content')
-    <html lang="en" class="light-style layout-menu-fixed" dir="ltr" data-theme="theme-default"
-        data-assets-path="../assets/" data-template="vertical-menu-template-free">
-
-
-    <body>
         @include('sweetalert::alert')
 
         <div class="layout-wrapper layout-content-navbar">
@@ -281,8 +276,6 @@
             </div>
         </div>
         </div>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
         <script>
             document.addEventListener('click', (e) => {
                 const btn = e.target.closest('.show-items');
@@ -417,8 +410,4 @@
                 }
             });
         </script>
-
-    </body>
-
-    </html>
 @endsection

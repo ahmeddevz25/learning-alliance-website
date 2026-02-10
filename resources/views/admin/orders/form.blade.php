@@ -1,28 +1,5 @@
 @extends('admin.layouts')
 @section('content')
-    <html lang="en" class="light-style layout-menu-fixed" dir="ltr" data-theme="theme-default"
-        data-assets-path="../assets/" data-template="vertical-menu-template-free">
-    <style>
-        /* Force Toastr styles in case theme is overriding */
-
-        .toast-success {
-            background-color: #51A351 !important;
-        }
-
-        .toast-error {
-            background-color: #BD362F !important;
-        }
-
-        .toast-info {
-            background-color: #2F96B4 !important;
-        }
-
-        .toast-warning {
-            background-color: #F89406 !important;
-        }
-    </style>
-
-    <body>
         <div class="layout-wrapper layout-content-navbar">
             <div class="layout-container">
 
@@ -399,8 +376,4 @@
                 });
             });
         </script>
-
-    </body>
-
-    </html>
 @endsection

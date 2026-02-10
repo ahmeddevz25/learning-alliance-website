@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -15,6 +16,13 @@ use RealRashid\SweetAlert\Facades\Alert;
 
 class ProductController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:products')->only('index');
+        $this->middleware('permission:product add')->only('store');
+        $this->middleware('permission:product edit')->only('edit', 'update');
+        $this->middleware('permission:product delete')->only('destroy');
+    }
 
     public function renderCategories($categories, $selected = [])
     {
@@ -165,7 +173,6 @@ class ProductController extends Controller
             $renderedCategories = $this->renderCategories($categories, $selectedCategories);
 
             return view('admin.products.form', compact('product', 'categories', 'sizes', 'selectedSizes', 'renderedCategories'));
-
         } catch (\Exception $e) {
             Log::error('Product Edit Error: ' . $e->getMessage());
             Alert::error('Error', 'Product not found.');
@@ -260,7 +267,6 @@ class ProductController extends Controller
 
             return redirect()->route('products')
                 ->with('success', 'Product updated successfully.');
-
         } catch (\Exception $e) {
             Log::error('Product update error: ' . $e->getMessage());
             return back()->withInput()
@@ -306,7 +312,6 @@ class ProductController extends Controller
 
             Alert::success('Success', 'Product deleted successfully!');
             return redirect()->route('products');
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Product Delete Error: ' . $e->getMessage());
@@ -314,5 +319,4 @@ class ProductController extends Controller
             return back();
         }
     }
-
 }
