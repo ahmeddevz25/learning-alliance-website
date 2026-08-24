@@ -307,14 +307,27 @@ class CartController extends Controller
         }
 
         $fields = $request->validate([
-            'campus'       => 'required|string|max:100',
-            'parent_name'  => 'required|string|max:120',
-            'student_name' => 'required|string|max:120',
+            'campus'       => 'required|string|in:Learning Alliance DHA,Learning Alliance International DHA,Learning Alliance Aziz Avenue,Learning Alliance Gulberg,Learning Alliance Faisalabad',
+            'parent_name'  => 'required|string|max:120|not_regex:/[\"\=\<\>]/',
+            'student_name' => 'required|string|max:120|not_regex:/[\"\=\<\>]/',
             'class'        => 'nullable|string|max:50',
             'section'      => 'nullable|string|max:50',
             'phone'        => 'nullable|string|max:30',
             'email'        => 'nullable|email|max:150',
+            'g-recaptcha-response' => 'required',
+        ], [
+            'g-recaptcha-response.required' => 'Please check the "I\'m not a robot" checkbox.',
         ]);
+
+        $recaptchaResponse = \Illuminate\Support\Facades\Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+            'secret' => env('RECAPTCHA_SECRET_KEY'),
+            'response' => $request->input('g-recaptcha-response'),
+            'remoteip' => $request->ip()
+        ]);
+
+        if (! $recaptchaResponse->json('success')) {
+            return back()->withErrors(['g-recaptcha-response' => 'reCAPTCHA verification failed, please try again.'])->withInput();
+        }
 
         try {
             $order = DB::transaction(function () use ($fields, $cartKey) {

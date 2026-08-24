@@ -143,7 +143,8 @@
                           <div class="header-logo mt-1">
                               <a href="{{ route('home') }}" class="logo-main">
                                   <img src="{{ asset('index') }}/assets/img/logo-right.png" loading="lazy"
-                                      alt="Learning Alliance" />
+                                      alt="Learning Alliance"
+                                      style="max-width: 250px; max-height: 80px;margin-top: 5px;" />
                               </a>
                           </div>
                       </div>
@@ -303,7 +304,8 @@
           <div class="offcanvas-wrapper">
               <div class="offcanvas-header border-btm-black">
                   <a href="{{ route('home') }}" class="logo-main">
-                      <img src="{{ asset('index') }}/assets/img/logo-right.png" loading="lazy" alt="Learning Alliance" />
+                      <img src="{{ asset('index') }}/assets/img/logo-right.png" loading="lazy" alt="Learning Alliance"
+                          style="max-width: 200px; max-height: 60px;" />
                   </a>
                   <button type="button" data-bs-dismiss="offcanvas" aria-label="Close" style="margin-left: 17rem;">
                       <i class="fas fa-times" style="font-size: 24px;"></i>

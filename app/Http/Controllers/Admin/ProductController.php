@@ -46,9 +46,9 @@ class ProductController extends Controller
 
     public function index()
     {
-        $products = Product::with(['images', 'category', 'sizes' => function ($q) {
-            $q->where('is_active', true); // 👈 sirf active sizes dikhayenge
-        }])->get();
+        $products = Product::with(['images', 'categories', 'sizes' => function ($q) {
+            $q->where('is_active', true)->with('sizeItem'); // 👈 active sizes + size items
+        }])->latest()->get();
 
         // Sirf root categories + unke children recursive
         $categories = Category::with('children.children')
@@ -171,6 +171,10 @@ class ProductController extends Controller
             });
 
             $renderedCategories = $this->renderCategories($categories, $selectedCategories);
+
+            if (request()->ajax()) {
+                return view('admin.products.edit-modal-content', compact('product', 'categories', 'sizes', 'selectedSizes', 'renderedCategories'));
+            }
 
             return view('admin.products.form', compact('product', 'categories', 'sizes', 'selectedSizes', 'renderedCategories'));
         } catch (\Exception $e) {

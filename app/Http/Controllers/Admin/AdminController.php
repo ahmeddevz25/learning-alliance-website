@@ -54,7 +54,7 @@ class AdminController extends Controller
         $todayVisitors     = Visitor::whereDate('visit_date', today())->count();
         $yesterdayVisitors = Visitor::whereDate('visit_date', today()->subDay())->count();
         $allVisitors       = Visitor::count();
-        $newVisitors       = Visitor::select('ip_address')->distinct()->count();
+        $newVisitors       = Visitor::distinct('ip_address')->count('ip_address');
 
         // Growth calculations
         $todayGrowth = $yesterdayVisitors > 0

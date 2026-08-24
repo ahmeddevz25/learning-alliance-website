@@ -13,7 +13,7 @@
     <meta name="description" content="" />
 
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="{{ asset('admin') }}/assets/img/logo-right.png" />
+    <link rel="icon" type="image/x-icon" href="{{ asset('admin') }}/assets/img/favicon.png" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -59,7 +59,8 @@
                         <div class="app-brand justify-content-center">
                             <a href="index.html" class="app-brand-link gap-2">
                                 <span class="app-brand-logo demo">
-                                    <img src="{{ asset('admin/assets/img/logo-right.png') }}" />
+                                    <img src="{{ asset('admin/assets/img/logo-right.png') }}"
+                                        style="max-width: 200px; max-height: 60px;" />
                                 </span>
                             </a>
                         </div>
@@ -141,7 +142,7 @@
 
 <!-- Toastr Flash Messages -->
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         @if ($errors->any())
             @foreach ($errors->all() as $error)
                 toastr.error(@json($error));
@@ -157,4 +158,3 @@
         @endif
     });
 </script>
-

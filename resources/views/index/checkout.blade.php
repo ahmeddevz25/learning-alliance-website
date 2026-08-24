@@ -1,6 +1,8 @@
 @extends('index.layout')
 @section('content')
 
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
     <div class="body-wrapper">
         <div class="breadcrumb">
             <div class="container">
@@ -149,6 +151,10 @@
                                             </div>
 
                                             <div class="shipping-address-area billing-area">
+                                                <div class="g-recaptcha mb-3" data-sitekey="{{ env('RECAPTCHA_SITE_KEY') }}"></div>
+                                                @error('g-recaptcha-response')
+                                                    <small class="text-danger d-block mb-3">{{ $message }}</small>
+                                                @enderror
                                                 <div
                                                     class="minicart-btn-area d-flex align-items-center justify-content-between flex-wrap">
                                                     <a href="{{ route('cartdetails') }}"

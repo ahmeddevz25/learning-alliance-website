@@ -1,4 +1,25 @@
       <!-- footer start -->
+      <style>
+          /* Footer Links Smooth Transition */
+          .footer-menu-item a {
+              display: inline-block;
+              transition: all 0.3s ease;
+          }
+
+          .footer-menu-item a:hover {
+              color: #fca311 !important;
+              transform: translateX(5px);
+          }
+
+          /* Social Icons Bouncy Hover */
+          .footer-social-item {
+              transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          }
+
+          .footer-social-item:hover {
+              transform: scale(1.2) translateY(-5px);
+          }
+      </style>
       <footer class="overflow-hidden footer-style-2">
           <div class="footer-top bg-5">
               <div class="container">
@@ -71,7 +92,7 @@
                                   <h4 class="footer-logo">
                                       <a href="{{ route('home') }}">
                                           <img src="{{ asset('index') }}/assets/img/logo-right.png"
-                                              alt="Learning Alliance" />
+                                              alt="Learning Alliance" style="max-width: 250px; max-height: 80px;" />
                                       </a>
                                   </h4>
                                   <div class="footer-widget-inner">
@@ -82,6 +103,9 @@
                                           </li>
                                           <li class="footer-menu-item"><a href="tel:+9242111666633"><b>DHA:</b>
                                                   +92-42-111-66-66-33</a>
+                                          </li>
+                                          <li class="footer-menu-item"><a href="tel:+9242111666633"><b>Gulberg:</b>
+                                                  +92-42-357-56-41-0</a>
                                           </li>
                                           <li class="footer-menu-item"><a href="tel:+9242111666611"><b>Aziz Avenue:</b>
                                                   +92-42-111-66-66-11</a></li>

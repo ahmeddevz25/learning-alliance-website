@@ -17,7 +17,7 @@ class OrderController extends Controller
 
     public function index()
     {
-        $orders = Order::with(['items.sizeItem', 'items.product'])->get();
+        $orders = Order::with(['items.sizeItem', 'items.product'])->latest()->get();
 
         return view('admin.orders.show-order', compact('orders'));
     }

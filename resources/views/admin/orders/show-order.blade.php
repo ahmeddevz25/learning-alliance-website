@@ -5,27 +5,25 @@
         <div class="layout-wrapper layout-content-navbar">
             <div class="layout-container">
                 <div class="layout-page">
-                    <div class="card mt-5 shadow-sm rounded" style="margin: 31px;">
-                        <div class="card-header d-flex justify-content-between align-items-center bg-light border-bottom">
-                            <h5 class="card-title mb-0 text-md-start text-center">All Orders</h5>
+                    <div class="container-xxl flex-grow-1 container-p-y">
+                        <div class="card mb-4 shadow border-0 rounded-3">
+                        <div class="card-header d-flex justify-content-between align-items-center bg-white border-bottom pb-3 pt-4">
+                            <h5 class="card-title mb-0 fw-bold text-primary"><i class="bx bx-cart me-2"></i> All Orders</h5>
                         </div>
 
 
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle table-striped border-top" id="example">
+                            <table class="table table-hover align-middle" id="example">
                                 <thead class="table-light">
-                                    <tr class="text-muted text-uppercase small">
+                                    <tr class="text-muted text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">
                                         <th>Sr. No</th>
                                         <th>Order #</th>
-                                        <th>Campus</th>
                                         <th>Parent / Student</th>
-                                        <th>Class / Section</th>
                                         <th>Contact</th>
-                                        <th>Items</th>
+                                        <th>Details</th>
                                         <th>Total</th>
                                         <th>Payment</th>
                                         <th>Status</th>
-                                        <th>Placed At</th>
                                         <th class="text-center">Actions</th>
                                     </tr>
                                 </thead>
@@ -33,59 +31,47 @@
                                 <tbody>
                                     @php
                                         $psMap = [
-                                            'unpaid' => 'secondary',
-                                            'paid' => 'success',
-                                            'refunded' => 'warning',
-                                            'failed' => 'danger',
+                                            'unpaid' => 'label-secondary',
+                                            'paid' => 'label-success',
+                                            'refunded' => 'label-warning',
+                                            'failed' => 'label-danger',
                                         ];
                                         $osMap = [
-                                            'pending' => 'warning',
-                                            'processing' => 'info',
-                                            'completed' => 'success',
-                                            'cancelled' => 'danger',
+                                            'pending' => 'label-warning',
+                                            'processing' => 'label-info',
+                                            'completed' => 'label-success',
+                                            'cancelled' => 'label-danger',
                                         ];
                                     @endphp
 
                                     @forelse ($orders as $key => $order)
                                         <tr>
-                                            <td data-bs-toggle="tooltip" data-bs-placement="top"
-                                                title="Row #{{ $key + 1 }}">
+                                            <td class="text-muted">
                                                 {{ $key + 1 }}
                                             </td>
 
-                                            <td class="fw-semibold" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                title="Order #: {{ $order->order_number }}">
+                                            <td class="fw-semibold">
                                                 #{{ $order->order_number }}
                                             </td>
 
-                                            <td data-bs-toggle="tooltip" data-bs-placement="top"
-                                                title="{{ $order->campus }}">
-                                                {{ $order->campus }}
-                                            </td>
+
 
                                             <td>
-                                                <div data-bs-toggle="tooltip" data-bs-placement="top"
-                                                    title="Parent: {{ $order->parent_name }}">
+                                                <div>
                                                     <strong>{{ $order->parent_name }}</strong>
                                                 </div>
-                                                <div class="text-muted small" data-bs-toggle="tooltip"
-                                                    data-bs-placement="top" title="Student: {{ $order->student_name }}">
+                                                <div class="text-muted small">
                                                     Student: {{ $order->student_name }}
                                                 </div>
                                             </td>
 
-                                            <td data-bs-toggle="tooltip" data-bs-placement="top"
-                                                title="Class / Section: {{ $order->class ?? '—' }} / {{ $order->section ?? '—' }}">
-                                                {{ $order->class ?? '—' }} / {{ $order->section ?? '—' }}
-                                            </td>
+
 
                                             <td>
-                                                <div data-bs-toggle="tooltip" data-bs-placement="top"
-                                                    title="Phone: {{ $order->phone ?? '—' }}">
+                                                <div>
                                                     {{ $order->phone ?? '—' }}
                                                 </div>
-                                                <div class="text-muted small" data-bs-toggle="tooltip"
-                                                    data-bs-placement="top" title="Email: {{ $order->email ?? '—' }}">
+                                                <div class="text-muted small">
                                                     {{ $order->email ?? '—' }}
                                                 </div>
                                             </td>
@@ -93,18 +79,32 @@
                                             @php $itemCount = (int) $order->items->sum('quantity'); @endphp
                                             <td>
                                                 <button type="button"
-                                                    class="btn btn-primary btn-sm align-items-center show-items"
-                                                    data-order="#{{ $order->order_number }}" data-bs-toggle="tooltip"
-                                                    data-bs-placement="top" title="Click to view items">
-                                                    {{ $itemCount }} item{{ $itemCount === 1 ? '' : 's' }}
+                                                    class="btn btn-sm btn-outline-primary show-items fw-bold text-nowrap"
+                                                    data-order="#{{ $order->order_number }}">
+                                                    <i class="bx bx-show me-1"></i> View Details
                                                 </button>
 
                                                 {{-- Hidden: items HTML (modal ke liye) --}}
                                                 <div class="items-html d-none">
-                                                    <div class="p-2 border rounded bg-light">
+                                                    <div class="d-flex flex-wrap bg-label-secondary p-3 rounded mb-4 gap-3">
+                                                        <div class="flex-grow-1">
+                                                            <span class="text-muted d-block" style="font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;">Campus</span>
+                                                            <strong class="text-dark">{{ $order->campus }}</strong>
+                                                        </div>
+                                                        <div class="flex-grow-1 border-start ps-3">
+                                                            <span class="text-muted d-block" style="font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;">Class / Section</span>
+                                                            <strong class="text-dark">{{ $order->class ?? '—' }} <span class="text-muted mx-1">/</span> {{ $order->section ?? '—' }}</strong>
+                                                        </div>
+                                                        <div class="flex-grow-1 border-start ps-3">
+                                                            <span class="text-muted d-block" style="font-size: 0.75rem; letter-spacing: 0.5px; text-transform: uppercase;">Placed At</span>
+                                                            <strong class="text-dark">{{ optional($order->created_at)->format('d M Y, h:i A') }}</strong>
+                                                        </div>
+                                                    </div>
+                                                    <h6 class="text-primary mb-3 fw-bold"><i class="bx bx-package me-1"></i> Order Items ({{ $itemCount }})</h6>
+                                                    <div class="border rounded shadow-sm overflow-hidden">
                                                         <div class="table-responsive">
-                                                            <table class="table table-sm mb-0">
-                                                                <thead class="table-secondary">
+                                                            <table class="table table-hover text-dark mb-0">
+                                                                <thead class="table-light">
                                                                     <tr>
                                                                         <th>#</th>
                                                                         <th>Product</th>
@@ -114,42 +114,38 @@
                                                                         <th class="text-end">Line Total</th>
                                                                     </tr>
                                                                 </thead>
-                                                                <tbody>
+                                                                <tbody class="text-dark">
                                                                     @foreach ($order->items as $k => $it)
                                                                         <tr>
                                                                             <td>{{ $k + 1 }}</td>
-                                                                            <td data-bs-toggle="tooltip"
-                                                                                data-bs-placement="top"
-                                                                                title="{{ $it->product_name ?? (optional($it->product)->name ?? 'Product') }}">
+                                                                            <td>
                                                                                 {{ $it->product_name ?? (optional($it->product)->name ?? 'Product') }}
                                                                             </td>
-                                                                            <td data-bs-toggle="tooltip"
-                                                                                data-bs-placement="top"
-                                                                                title="{{ optional($it->sizeItem)->size ?? '—' }}">
+                                                                            <td>
                                                                                 {{ optional($it->sizeItem)->size ?? '—' }}
                                                                             </td>
                                                                             <td class="text-end">Rs.
-                                                                                {{ number_format((float) $it->unit_price, 2) }}
+                                                                                {{ number_format((float) $it->unit_price, 0) }}
                                                                             </td>
                                                                             <td class="text-end">{{ (int) $it->quantity }}
                                                                             </td>
                                                                             <td class="text-end">Rs.
-                                                                                {{ number_format((float) $it->line_total, 2) }}
+                                                                                {{ number_format((float) $it->line_total, 0) }}
                                                                             </td>
                                                                         </tr>
                                                                     @endforeach
                                                                 </tbody>
-                                                                <tfoot>
+                                                                <tfoot class="text-dark">
                                                                     <tr>
                                                                         <th colspan="5" class="text-end">Subtotal</th>
                                                                         <th class="text-end">Rs.
-                                                                            {{ number_format((float) $order->subtotal, 2) }}
+                                                                            {{ number_format((float) $order->subtotal, 0) }}
                                                                         </th>
                                                                     </tr>
                                                                     <tr>
                                                                         <th colspan="5" class="text-end">Total</th>
-                                                                        <th class="text-end">Rs.
-                                                                            {{ number_format((float) $order->total, 2) }}
+                                                                        <th class="text-end text-primary fs-6">Rs.
+                                                                            {{ number_format((float) $order->total, 0) }}
                                                                         </th>
                                                                     </tr>
                                                                 </tfoot>
@@ -159,23 +155,22 @@
                                                 </div>
                                             </td>
 
-                                            <td data-bs-toggle="tooltip" data-bs-placement="top"
-                                                title="Total: Rs. {{ number_format((float) $order->total, 2) }}">
-                                                Rs. {{ number_format((float) $order->total, 2) }}
+                                            <td>
+                                                Rs. {{ number_format((float) $order->total, 0) }}
                                             </td>
 
                                             @php
                                                 $psMap = [
-                                                    'unpaid' => 'secondary',
-                                                    'paid' => 'success',
-                                                    'refunded' => 'warning',
-                                                    'failed' => 'danger',
+                                                    'unpaid' => 'label-secondary',
+                                                    'paid' => 'label-success',
+                                                    'refunded' => 'label-warning',
+                                                    'failed' => 'label-danger',
                                                 ];
                                                 $osMap = [
-                                                    'pending' => 'warning',
-                                                    'processing' => 'info',
-                                                    'completed' => 'success',
-                                                    'cancelled' => 'danger',
+                                                    'pending' => 'label-warning',
+                                                    'processing' => 'label-info',
+                                                    'completed' => 'label-success',
+                                                    'cancelled' => 'label-danger',
                                                 ];
                                                 $paymentEnums = ['unpaid', 'paid', 'refunded', 'failed'];
                                                 $orderEnums = ['pending', 'processing', 'completed', 'cancelled'];
@@ -185,9 +180,8 @@
                                             <td>
                                                 <div class="dropdown">
                                                     <button type="button"
-                                                        class="badge bg-{{ $psMap[$order->payment_status] ?? 'secondary' }} dropdown-toggle border-0"
+                                                        class="btn btn-sm dropdown-toggle border-0 badge bg-{{ $psMap[$order->payment_status] ?? 'label-secondary' }} fw-bold"
                                                         data-bs-toggle="dropdown" aria-expanded="false"
-                                                        title="Payment status: {{ ucfirst($order->payment_status) }}"
                                                         @if ($order->payment_status === 'paid') disabled @endif>
                                                         {{ ucfirst($order->payment_status) }}
                                                     </button>
@@ -212,11 +206,10 @@
                                             <td>
                                                 <div class="dropdown">
                                                     <button type="button"
-                                                        class="badge bg-{{ $osMap[$order->status] ?? 'secondary' }} dropdown-toggle border-0"
+                                                        class="btn btn-sm dropdown-toggle border-0 badge bg-{{ $osMap[$order->status] ?? 'label-secondary' }} fw-bold"
                                                         data-role="order-status-toggle" data-bs-toggle="dropdown"
                                                         aria-expanded="false"
-                                                        @if ($order->status === 'completed') disabled @endif
-                                                        title="Order status: {{ ucfirst($order->status) }}">
+                                                        @if ($order->status === 'completed') disabled @endif>
                                                         {{ ucfirst($order->status) }}
                                                     </button>
                                                     <ul class="dropdown-menu dropdown-menu-end">
@@ -234,22 +227,17 @@
                                                     </ul>
                                                 </div>
                                             </td>
-                                            <td class="text-nowrap" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                title="{{ optional($order->created_at)->toDayDateTimeString() }}">
-                                                {{ optional($order->created_at)->format('d M Y, h:i A') }}
-                                            </td>
+
                                             <td class="text-center">
                                                 @can('order delete')
                                                     <a href="{{ route('orders.delete', $order->id) }}"
-                                                        class="text-danger fs-5" title="Delete this order"
-                                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                                        class="text-danger fs-5"
                                                         onclick="return confirm('Are you sure you want to delete this Order?')">
                                                         <i class='bx bx-trash'></i>
                                                     </a>
                                                 @endcan
-                        </div>
-                        </td>
-                        </tr>
+                                            </td>
+                                        </tr>
                     @empty
                         <tr>
                             <td colspan="12" class="text-center text-muted">No orders found</td>
@@ -260,7 +248,7 @@
                         </table>
                     </div>
                     <div class="modal fade" id="orderItemsModal" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-dialog modal-xl modal-dialog-scrollable">
                             <div class="modal-content">
                                 <div class="modal-header">
                                     <h5 class="modal-title">Order Items</h5>
@@ -272,9 +260,10 @@
                         </div>
                     </div>
 
+                    </div>
+                    </div>
                 </div>
             </div>
-        </div>
         </div>
         <script>
             document.addEventListener('click', (e) => {
@@ -285,8 +274,8 @@
                 const html = tr.querySelector('.items-html')?.innerHTML || '<div class="p-3">No items.</div>';
 
                 const modalEl = document.getElementById('orderItemsModal');
-                modalEl.querySelector('.modal-title').textContent = `Items for ${btn.dataset.order || ''}`;
-                modalEl.querySelector('.modal-body').innerHTML = html;
+                modalEl.querySelector('.modal-title').innerHTML = `<i class="bx bx-receipt me-1"></i> Order Details <span class="text-primary">${btn.dataset.order || ''}</span>`;
+                modalEl.querySelector('.modal-body').innerHTML = `<div class="p-4">${html}</div>`;
 
                 const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
                 bsModal.show();
@@ -339,16 +328,16 @@
 
                     // maps
                     const clsMapPayment = {
-                        unpaid: 'bg-secondary',
-                        paid: 'bg-success',
-                        refunded: 'bg-warning',
-                        failed: 'bg-danger'
+                        unpaid: 'bg-label-secondary',
+                        paid: 'bg-label-success',
+                        refunded: 'bg-label-warning',
+                        failed: 'bg-label-danger'
                     };
                     const clsMapOrder = {
-                        pending: 'bg-warning',
-                        processing: 'bg-info',
-                        completed: 'bg-success',
-                        cancelled: 'bg-danger'
+                        pending: 'bg-label-warning',
+                        processing: 'bg-label-info',
+                        completed: 'bg-label-success',
+                        cancelled: 'bg-label-danger'
                     };
 
                     const clsMap = (kind === 'payment') ? clsMapPayment : clsMapOrder;

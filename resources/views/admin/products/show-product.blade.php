@@ -68,6 +68,7 @@
         <!-- Layout wrapper -->
 
         <div class="layout-wrapper layout-content-navbar">
+
             <div class="layout-container">
                 <div class="layout-page">
                     <div class="card mt-5 shadow-sm rounded" style="margin: 31px;">
@@ -83,7 +84,21 @@
                         </div>
 
 
-                        <div class="table-responsive">
+                        <!-- Table Loader Container -->
+                        <div id="table-loader-container" style="min-height: 300px; display: flex; justify-content: center; align-items: center;">
+                            <div class="text-center">
+                                <div class="sk-wave mx-auto">
+                                    <div class="sk-wave-rect"></div>
+                                    <div class="sk-wave-rect"></div>
+                                    <div class="sk-wave-rect"></div>
+                                    <div class="sk-wave-rect"></div>
+                                    <div class="sk-wave-rect"></div>
+                                </div>
+                                <div class="mt-3 text-primary fw-bold">Loading Products...</div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive" id="product-table-wrapper" style="display: none;">
                             <table class="table table-hover align-middle table-striped border-top" id="example">
                                 <thead class="table-light">
                                     <tr class="text-muted text-uppercase small">
@@ -143,10 +158,10 @@
                                             </td>
                                             <td>
                                                 @php
-                                                    $mainImage = $product->images->firstWhere('is_primary', true);
+                                                    $mainImage = $product->images->where('is_primary', true)->first() ?? $product->images->first();
                                                 @endphp
                                                 @if ($mainImage && $mainImage->image_path)
-                                                    <img src="{{ asset('storage/' . $mainImage->image_path) }}"
+                                                    <img src="{{ Storage::disk('public')->url($mainImage->image_path) }}"
                                                     data-bs-toggle="tooltip" data-bs-placement="top"
                                                             title="{{ $product->name }}"
                                                         alt="{{ $product->name }}" class="rounded-circle"
@@ -158,14 +173,14 @@
                                             <td>
                                                 <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
                                                     @php
-                                                        $otherImages = $product->images->filter(function ($img) {
-                                                            return !$img->is_primary;
+                                                        $otherImages = $product->images->filter(function ($img) use ($mainImage) {
+                                                            return $mainImage ? $img->id !== $mainImage->id : !$img->is_primary;
                                                         });
                                                     @endphp
                                                     @foreach ($otherImages->take(3) as $image)
                                                         <li data-bs-toggle="tooltip" data-bs-placement="top"
                                                             title="{{ $product->name }}">
-                                                            <img src="{{ asset('storage/' . $image->image_path) }}"
+                                                            <img src="{{ Storage::disk('public')->url($image->image_path) }}"
                                                                 alt="{{ $product->name }}" class="rounded-circle"
                                                                 style="object-fit: cover; width: 40px; height: 40px;">
                                                         </li>
@@ -204,7 +219,7 @@
                                                         <a href="{{ route('products.edit', $product->id) }}"
                                                             data-bs-toggle="tooltip" data-bs-offset="0,8"
                                                             data-bs-placement="top" data-bs-custom-class="tooltip-icon-info"
-                                                            data-bs-original-title="Edit Product" class="text-primary fs-5">
+                                                            data-bs-original-title="Edit Product" class="text-primary fs-5 edit-product-btn">
                                                             <i class='bx bx-edit'></i>
                                                         </a>
                                                     @endcan
@@ -279,94 +294,97 @@
 
 
                         <!-- Add Product Modal -->
-                        <div class="modal fade" id="addProductModal" tabindex="-1"
-                            aria-labelledby="addProductModalLabel" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <form action="{{ route('products.store') }}" method="POST" id="product-form"
-                                        enctype="multipart/form-data">
+                        <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-xl">
+                                <div class="modal-content shadow-lg border-0 rounded-3">
+                                    <!-- Header -->
+                                    <div class="modal-header bg-primary">
+                                        <h5 class="modal-title text-white" id="addProductModalLabel">
+                                            <i class="bx bx-plus-circle me-2"></i> Add New Product
+                                        </h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <form action="{{ route('products.store') }}" method="POST" id="product-form" enctype="multipart/form-data">
                                         @csrf
-                                        <div class="modal-body">
-                                            <!-- Product Name -->
-                                            <div class="mb-3">
-                                                <label for="name" class="form-label">Product Name</label>
-                                                <input type="text" name="name" class="form-control" required>
-                                            </div>
+                                        <div class="modal-body p-4">
+                                            <div class="row g-4">
+                                                <!-- Left Column -->
+                                                <div class="col-md-7">
+                                                    <!-- Product Name -->
+                                                    <div class="mb-4">
+                                                        <label for="name" class="form-label fw-semibold">Product Name <span class="text-danger">*</span></label>
+                                                        <input type="text" name="name" class="form-control form-control-lg" placeholder="e.g. Summer Polo Shirt" required>
+                                                    </div>
 
-                                            <!-- Sizes and Prices -->
-                                            <div class="mb-3">
-                                                <label for="sizes" class="form-label">Product Sizes</label>
-                                                <div id="size-container">
-                                                    <div class="size-entry mb-3 position-relative">
-                                                        <select name="sizes[0][size]" class="form-control mb-2" required>
-                                                            <option value="" disabled selected>Select Size</option>
-                                                            @foreach ($sizes as $size)
-                                                                <option value="{{ $size->id }}"
-                                                                    data-size="{{ $size->size }}">{{ $size->size }}
-                                                                </option>
-                                                            @endforeach
-                                                        </select>
-                                                        <input type="number" name="sizes[0][price]"
-                                                            class="form-control mb-2" placeholder="Price (Rs.)"
-                                                            step="0.01" required>
-                                                        {{-- <input type="number" name="sizes[0][stock]"
-                                                            class="form-control mb-2" placeholder="Stock Quantity"
-                                                            required> --}}
-                                                        <!-- Cross button to remove size -->
-                                                        <button type="button"
-                                                            class="btn btn-danger btn-sm remove-size-btn"
-                                                            style="position: absolute; right: 5px; top: 5px; display:none;">&times;</button>
+                                                    <!-- Product Description -->
+                                                    <div class="mb-4">
+                                                        <label for="desc" class="form-label fw-semibold">Product Description</label>
+                                                        <textarea name="desc" id="desc" class="form-control" placeholder="Write a brief description...">{{ old('desc') }}</textarea>
+                                                    </div>
+
+                                                    <!-- Categories -->
+                                                    <div class="mb-4">
+                                                        <label class="form-label fw-semibold">Categories</label>
+                                                        <div class="bg-light p-3 rounded border shadow-sm" style="max-height:220px; overflow-y:auto;">
+                                                            {!! $renderedCategories !!}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <button type="button" class="btn btn-primary" id="add-size-btn">Add
-                                                    Size</button>
-                                            </div>
 
+                                                <!-- Right Column -->
+                                                <div class="col-md-5">
+                                                    <!-- Main Image -->
+                                                    <div class="mb-4">
+                                                        <label for="main_image" class="form-label fw-semibold">Main Image <span class="text-danger">*</span></label>
+                                                        <input type="file" name="main_image" class="form-control" accept="image/*" required>
+                                                        <div class="form-text">Primary image shown on the shop page.</div>
+                                                    </div>
 
+                                                    <!-- Additional Images -->
+                                                    <div class="mb-4">
+                                                        <label for="images" class="form-label fw-semibold">Additional Images <span class="text-muted small">(Optional)</span></label>
+                                                        <input type="file" name="images[]" class="form-control" accept="image/*" multiple>
+                                                        <div class="form-text">Select multiple images for the gallery.</div>
+                                                    </div>
 
-
-                                            <!-- Product Description -->
-                                            <div class="mb-3">
-                                                <label for="desc" class="form-label">Product Description</label>
-                                                <textarea name="desc" id="desc" class="form-control">{{ old('desc') }}</textarea>
-                                            </div>
-
-                                            <!-- Main Image -->
-                                            <div class="mb-3">
-                                                <label for="main_image" class="form-label">Main Image</label>
-                                                <input type="file" name="main_image" class="form-control"
-                                                    accept="image/*" required>
-                                            </div>
-
-                                            <!-- Additional Images -->
-                                            <div class="mb-3">
-                                                <label for="images" class="form-label">Additional Images</label>
-                                                <input type="file" name="images[]" class="form-control"
-                                                    accept="image/*" multiple>
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Categories</label>
-                                                <div
-                                                    style="max-height:250px; overflow-y:auto; border:1px solid #ddd; padding:10px; border-radius:5px;">
-                                                    {!! $renderedCategories !!}
+                                                    <!-- Sizes and Prices -->
+                                                    <div class="mb-4">
+                                                        <label class="form-label fw-semibold">Sizes & Prices <span class="text-danger">*</span></label>
+                                                        <div class="bg-light p-3 rounded border shadow-sm">
+                                                            <div id="size-container">
+                                                                <div class="size-entry mb-3 position-relative d-flex gap-2 align-items-center">
+                                                                    <div class="flex-grow-1 d-flex gap-2">
+                                                                        <select name="sizes[0][size]" class="form-select" required>
+                                                                            <option value="" disabled selected>Select Size</option>
+                                                                            @foreach ($sizes as $size)
+                                                                                <option value="{{ $size->id }}" data-size="{{ $size->size }}">{{ $size->size }}</option>
+                                                                            @endforeach
+                                                                        </select>
+                                                                        <div class="input-group">
+                                                                            <span class="input-group-text bg-white">Rs.</span>
+                                                                            <input type="number" name="sizes[0][price]" class="form-control" placeholder="Price" step="0.01" required>
+                                                                        </div>
+                                                                    </div>
+                                                                    <button type="button" class="btn btn-outline-danger btn-sm remove-size-btn" style="display:none;" title="Remove Size">
+                                                                        <i class="bx bx-trash"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <button type="button" class="btn btn-sm btn-outline-primary w-100" id="add-size-btn">
+                                                                <i class="bx bx-plus"></i> Add Another Size
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
+                                        </div>
 
-
-
-
-
-
-                                            <!-- Footer -->
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-outline-secondary"
-                                                    data-bs-dismiss="modal">Cancel</button>
-                                                <button type="submit" class="btn btn-primary">Add Product</button>
-                                            </div>
+                                        <!-- Footer -->
+                                        <div class="modal-footer bg-light border-top">
+                                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary px-4 shadow-sm"><i class="bx bx-save me-1"></i> Save Product</button>
                                         </div>
                                     </form>
-
                                 </div>
                             </div>
                         </div>
@@ -410,6 +428,13 @@
                     .catch(error => {
                         console.error(error);
                     });
+                    
+                // Fix for CKEditor 5 inside Bootstrap 5 Modal
+                document.addEventListener('focusin', function (e) {
+                    if (e.target.closest('.ck-editor__editable, .ck-editor__main, .ck-balloon-panel')) {
+                        e.stopImmediatePropagation();
+                    }
+                });
             });
         </script>
 
@@ -421,13 +446,17 @@
 
                 // Create a new size entry div
                 var newSizeEntry = document.createElement('div');
-                newSizeEntry.classList.add('size-entry', 'mb-3', 'position-relative');
+                newSizeEntry.classList.add('size-entry', 'mb-3', 'position-relative', 'd-flex', 'gap-2', 'align-items-center');
                 newSizeEntry.setAttribute('data-index', index);
+
+                // Create inner flex div for side-by-side layout
+                var innerDiv = document.createElement('div');
+                innerDiv.classList.add('flex-grow-1', 'd-flex', 'gap-2');
 
                 // Add select element for size
                 var select = document.createElement('select');
                 select.name = `sizes[${index}][size]`;
-                select.classList.add('form-control', 'mb-2'); // Added mb-2 here
+                select.classList.add('form-select');
                 select.setAttribute('required', 'true');
 
                 // Add the default option
@@ -447,31 +476,31 @@
                     select.appendChild(option);
                 @endforeach
 
-                // Add price input field
+                // Add input group for price
+                var inputGroup = document.createElement('div');
+                inputGroup.classList.add('input-group');
+
+                var inputGroupText = document.createElement('span');
+                inputGroupText.classList.add('input-group-text', 'bg-white');
+                inputGroupText.textContent = 'Rs.';
+
                 var inputPrice = document.createElement('input');
                 inputPrice.type = 'number';
                 inputPrice.name = `sizes[${index}][price]`;
-                inputPrice.classList.add('form-control', 'mb-2');
-                inputPrice.placeholder = 'Price (Rs.)';
+                inputPrice.classList.add('form-control');
+                inputPrice.placeholder = 'Price';
                 inputPrice.step = '0.01';
                 inputPrice.required = true;
 
-                // Add stock input field
-                var inputStock = document.createElement('input');
-                inputStock.type = 'number';
-                inputStock.name = `sizes[${index}][stock]`;
-                inputStock.classList.add('form-control', 'mb-2');
-                inputStock.required = true;
+                inputGroup.appendChild(inputGroupText);
+                inputGroup.appendChild(inputPrice);
 
-                // Create the remove button (cross icon)
+                // Create the remove button (trash icon)
                 var removeBtn = document.createElement('button');
                 removeBtn.type = 'button';
-                removeBtn.classList.add('btn', 'btn-danger', 'btn-sm', 'remove-size-btn');
-                removeBtn.style.position = 'absolute';
-                removeBtn.style.right = '5px';
-                removeBtn.style.top = '5px';
-                removeBtn.style.display = 'block';
-                removeBtn.innerHTML = '&times;'; // Cross icon
+                removeBtn.classList.add('btn', 'btn-outline-danger', 'btn-sm', 'remove-size-btn');
+                removeBtn.title = 'Remove Size';
+                removeBtn.innerHTML = "<i class='bx bx-trash'></i>"; 
 
                 // Add the event listener for the remove button
                 removeBtn.addEventListener('click', function() {
@@ -479,10 +508,12 @@
                     updateSizeOptions(); // Update dropdown options after removal
                 });
 
-                // Append select, price input, stock input, and remove button to the new size entry div
-                newSizeEntry.appendChild(select);
-                newSizeEntry.appendChild(inputPrice);
-                // newSizeEntry.appendChild(inputStock);
+                // Append select and price input to inner div
+                innerDiv.appendChild(select);
+                innerDiv.appendChild(inputGroup);
+
+                // Append inner div and remove button to the new size entry div
+                newSizeEntry.appendChild(innerDiv);
                 newSizeEntry.appendChild(removeBtn);
 
                 // Append the new size entry to the size container
@@ -615,6 +646,18 @@
                         }
                     });
                 });
+
+                // Hide Loader when DOM is ready
+                setTimeout(function() {
+                    let loader = document.getElementById('table-loader-container');
+                    let tableWrapper = document.getElementById('product-table-wrapper');
+                    if(loader) {
+                        loader.style.display = 'none';
+                    }
+                    if(tableWrapper) {
+                        tableWrapper.style.display = 'block';
+                    }
+                }, 300);
             });
         </script>
 
@@ -633,6 +676,51 @@
 
                 const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
                 bsModal.show();
+            });
+        </script>
+
+        <!-- Edit Product Modal Placeholder -->
+        <div class="modal fade" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content shadow-lg border-0 rounded-3" id="editModalContent">
+                    <!-- Dynamic AJAX Content -->
+                    <div class="p-5 text-center">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <div class="mt-2 text-muted">Loading product details...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Open Edit Modal via AJAX
+            $(document).on('click', '.edit-product-btn', function(e) {
+                e.preventDefault();
+                let editUrl = $(this).attr('href');
+                let modalEl = $('#editProductModal');
+                let modalContent = $('#editModalContent');
+                
+                // Show modal with loading state
+                modalContent.html(`
+                    <div class="p-5 text-center">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <div class="mt-2 text-muted">Loading product details...</div>
+                    </div>
+                `);
+                modalEl.modal('show');
+
+                // Fetch content
+                $.get(editUrl, function(response) {
+                    modalContent.html(response);
+                }).fail(function() {
+                    modalContent.html(`
+                        <div class="p-4 text-center text-danger">
+                            <i class="bx bx-error-circle fs-1 mb-2"></i>
+                            <h5>Failed to load data.</h5>
+                            <button class="btn btn-secondary mt-3" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    `);
+                });
             });
         </script>
     </body>
