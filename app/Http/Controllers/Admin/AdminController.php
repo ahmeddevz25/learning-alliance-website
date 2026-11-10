@@ -75,6 +75,9 @@ class AdminController extends Controller
             ? round((($thisWeekVisitors - $previousWeekVisitors) / $previousWeekVisitors) * 100, 2)
             : ($thisWeekVisitors > 0 ? 100 : 0);
 
+        // Recent 5 orders for dashboard quick view
+        $recentOrders = Order::with('items')->latest()->take(5)->get();
+
         return view('admin.index', compact(
             'totalProducts',
             'totalOrders',
@@ -86,7 +89,8 @@ class AdminController extends Controller
             'todayGrowth',
             'previousWeekVisitors',
             'thisWeekVisitors',
-            'weekGrowth'
+            'weekGrowth',
+            'recentOrders'
         ));
     }
 
@@ -189,5 +193,10 @@ class AdminController extends Controller
         Artisan::call('view:clear');
 
         return redirect()->back()->with('success', 'Cache Cleared successfully!');
+    }
+
+    public function clearcache()
+    {
+        return $this->cacheclear();
     }
 }

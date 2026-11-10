@@ -292,6 +292,20 @@
                             `<tr><td colspan="4" class="text-center py-5">Your cart is empty.</td></tr>`;
                     }
 
+                    // Update live totals and badge
+                    if (data.totals) {
+                        const subtotalEl = document.querySelector('#cart-subtotal');
+                        const grandEl = document.querySelector('#cart-grand');
+                        const badgeEl = document.querySelector('.cart-count, [data-cart-badge]');
+                        if (subtotalEl) subtotalEl.textContent = data.totals.subtotal;
+                        if (grandEl) grandEl.textContent = data.totals.grand;
+                        if (badgeEl) {
+                            badgeEl.textContent = data.totals.badge_text;
+                            badgeEl.classList.add('bump');
+                            setTimeout(() => badgeEl.classList.remove('bump'), 350);
+                        }
+                    }
+
                     // --- TOAST ---
                     const msg = data.message || data.success || 'Removed from cart';
                     if (window.toastr) {

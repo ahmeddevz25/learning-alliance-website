@@ -1,5 +1,6 @@
 @extends('index.layout')
 @section('content')
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         .map-responsive {
             position: relative;
@@ -154,6 +155,12 @@
                                             <fieldset>
                                                 <textarea name="message" cols="20" rows="6" placeholder="Write your message here*" required>{{ old('message') }}</textarea>
                                             </fieldset>
+                                            <div class="mb-4 mt-2">
+                                                <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') ?: env('RECAPTCHA_SITE_KEY') }}"></div>
+                                                @error('g-recaptcha-response')
+                                                    <small class="text-danger d-block mt-1">{{ $message }}</small>
+                                                @enderror
+                                            </div>
                                             <button type="submit"
                                                 class="position-relative review-submit-btn contact-submit-btn">
                                                 SEND MESSAGE

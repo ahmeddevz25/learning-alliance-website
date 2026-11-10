@@ -29,6 +29,8 @@
         class="template-customizer-theme-css" />
     <link rel="stylesheet" href="{{ asset('admin') }}/assets/css/demo.css" />
     <link rel="stylesheet" href="{{ asset('admin') }}/assets/css/datatable.css" />
+    <!-- Modern SaaS Dashboard Styling -->
+    <link rel="stylesheet" href="{{ asset('admin') }}/assets/css/saas-dashboard.css" />
 
     <!-- Vendors CSS -->
     <link rel="stylesheet" href="{{ asset('admin') }}/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css" />

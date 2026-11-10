@@ -97,6 +97,8 @@ Route::middleware(['admin.redirect'])->group(function () {
         //Contact Messages
         Route::get('/contact-messages', [ContactMessageController::class, 'index'])->name('contactmessages');
         Route::get('/contact-messages/delete/{id}', [ContactMessageController::class, 'destroy'])->name('contactmessages.delete');
+        Route::post('/contact-messages/bulk-delete', [ContactMessageController::class, 'bulkDelete'])->name('contactmessages.bulkDelete');
+        Route::post('/contact-messages/delete-spam', [ContactMessageController::class, 'deleteSpam'])->name('contactmessages.deleteSpam');
 
         // Index - All Users
         Route::get('/users', [UserController::class, 'index'])->name('users');
@@ -121,38 +123,51 @@ Route::middleware(['admin.redirect'])->group(function () {
         Route::post('/permissions/update/{id}', [PermissionController::class, 'update'])->name('permissions.update');
         Route::get('/permissions/delete/{id}', [PermissionController::class, 'destroy'])->name('permissions.delete');
 
-        Route::get('clear-cache', [AdminController::class, 'clearcache'])->name('cacheclear');
+        Route::get('admin/clear-cache', [AdminController::class, 'cacheclear'])->name('cacheclear');
     });
 });
 
-Route::get('clear-cache', [IndexController::class, 'clearcache'])->name('cacheclear');
-Route::get('/setup-project', function () {
-    // Migrate fresh
-    Artisan::call('migrate:fresh', [
-        '--force' => true,
-    ]);
+Route::get('clear-cache', [IndexController::class, 'cacheclear'])->name('public.cacheclear');
+// Dangerously destructive routes - Restricted ONLY to local development environment
+if (app()->environment('local')) {
+    Route::get('/setup-project', function () {
+        Artisan::call('migrate:fresh', [
+            '--force' => true,
+        ]);
 
-    // Seed database
-    Artisan::call('db:seed', [
-        '--force' => true,
-    ]);
+        Artisan::call('db:seed', [
+            '--force' => true,
+        ]);
 
-    // Storage link
-    Artisan::call('storage:link');
+        Artisan::call('storage:link');
 
-    return "✅ Project setup completed successfully!";
-});
+        return "✅ Project setup completed successfully!";
+    });
 
-// Maintainance Mode
-Route::get('/down', function () {
-    Artisan::call('down');
-    return "✅ Application is now in maintenance mode.";
-});
+    Route::get('/down', function () {
+        Artisan::call('down');
+        return "✅ Application is now in maintenance mode.";
+    });
 
-Route::get('/up', function () {
-    Artisan::call('up');
-    return "✅ Application is now live.";
-});
+    Route::get('/up', function () {
+        Artisan::call('up');
+        return "✅ Application is now live.";
+    });
+
+    Route::get('/composer-dump-autoload', function () {
+        try {
+            Artisan::call('dump-autoload');
+            return "<pre>" . Artisan::output() . "</pre>";
+        } catch (\Exception $e) {
+            return "❌ Error: " . $e->getMessage();
+        }
+    });
+
+    Route::get('/migrate', function () {
+        Artisan::call('migrate');
+        return "✅ Migration successfully!";
+    });
+}
 
 // Route::get('/insert-data', function () {
 //     DB::table('product_size_items')->insert([
@@ -256,20 +271,4 @@ Route::get('/create-payment-mode-table', function () {
 //     }
 // });
 
-Route::get('/composer-dump-autoload', function () {
-    try {
-        // Run dump-autoload
-        Artisan::call('dump-autoload');
 
-        return "<pre>" . Artisan::output() . "</pre>";
-    } catch (\Exception $e) {
-        return "❌ Error: " . $e->getMessage();
-    }
-});
-
-Route::get('/migrate', function () {
-
-    Artisan::call('migrate');
-
-    return "✅Migration successfully!";
-});

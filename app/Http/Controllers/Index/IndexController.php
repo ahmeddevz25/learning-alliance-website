@@ -14,6 +14,7 @@ use App\Models\InstructionGuid;
 use App\Models\ProductSizeItem;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Artisan;
@@ -301,18 +302,41 @@ class IndexController extends Controller
     public function submit(Request $request)
     {
         $data = $request->validate([
-            'name'    => ['required', 'string', 'max:120'],
-            'email'   => ['required', 'email', 'max:190'],
-            'phone'   => ['nullable', 'string', 'max:50'],
-            'subject' => ['nullable', 'string', 'max:190'],
-            'message' => ['required', 'string', 'max:5000'],
-            // 'website' => ['prohibited'], // optional honeypot
+            'name'                 => ['required', 'string', 'max:120'],
+            'email'                => ['required', 'email', 'max:190'],
+            'phone'                => ['nullable', 'string', 'max:50'],
+            'subject'              => ['nullable', 'string', 'max:190'],
+            'message'              => ['required', 'string', 'max:5000'],
+            'g-recaptcha-response' => ['required'],
+        ], [
+            'g-recaptcha-response.required' => 'Please check the "I\'m not a robot" checkbox.',
         ]);
+
+        $recaptchaSecret = config('services.recaptcha.secret_key') ?: env('RECAPTCHA_SECRET_KEY');
+        if ($recaptchaSecret) {
+            $recaptchaResponse = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+                'secret'   => $recaptchaSecret,
+                'response' => $request->input('g-recaptcha-response'),
+                'remoteip' => $request->ip(),
+            ]);
+
+            if (! $recaptchaResponse->json('success')) {
+                return back()->withErrors(['g-recaptcha-response' => 'reCAPTCHA verification failed, please try again.'])->withInput();
+            }
+        }
+
+        unset($data['g-recaptcha-response']);
 
         $contact = ContactMessage::create($data);
 
         // Email admin
-        Mail::to(config('mail.contact_admin'))->send(new ContactSubmitted($contact));
+        if (config('mail.contact_admin')) {
+            try {
+                Mail::to(config('mail.contact_admin'))->send(new ContactSubmitted($contact));
+            } catch (\Throwable $e) {
+                Log::error('Contact form email failed: ' . $e->getMessage());
+            }
+        }
 
         return back()->with('status', 'Thank you! Your message has been sent.');
     }
@@ -325,5 +349,10 @@ class IndexController extends Controller
         Artisan::call('view:clear');
 
         return redirect()->back()->with('success', 'Cache Cleared successfully!');
+    }
+
+    public function clearcache()
+    {
+        return $this->cacheclear();
     }
 }

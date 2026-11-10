@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Index;
 
 use App\Http\Controllers\Controller;
@@ -10,6 +11,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -17,6 +19,23 @@ use RealRashid\SweetAlert\Facades\Alert;
 
 class CartController extends Controller
 {
+    /**
+     * Get or generate a persistent 90-day cart key cookie.
+     */
+    private function cartKey(): string
+    {
+        $key = Cookie::get('cart_key');
+        if (! $key) {
+            $key = (string) Str::uuid();
+            Cookie::queue(cookie('cart_key', $key, 60 * 24 * 90, null, null, false, true, false, 'Lax'));
+        }
+
+        return $key;
+    }
+
+    /**
+     * Add single item to cart.
+     */
     public function add(Request $request)
     {
         $data = $request->validate([
@@ -25,22 +44,15 @@ class CartController extends Controller
             'quantity'   => 'required|integer|min:1',
         ]);
 
-        // ✅ Stable cart key (90 days) — isi ko carts.session_id me store / query karenge
-        $cartKey = Cookie::get('cart_key');
-        if (! $cartKey) {
-            $cartKey = (string) Str::uuid();
-            Cookie::queue(cookie('cart_key', $cartKey, 60 * 24 * 90, null, null, false, true, false, 'Lax'));
-        }
+        $cartKey = $this->cartKey();
 
         try {
             DB::transaction(function () use ($data, $cartKey) {
-                // Variant lock (consistent stock/price)
                 $variant = ProductSize::where('product_id', $data['product_id'])
                     ->where('size_id', $data['size_id'])
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                // Existing cart line (lock too)
                 $line = Cart::where('session_id', $cartKey)
                     ->where('product_id', $data['product_id'])
                     ->where('size_id', $data['size_id'])
@@ -52,13 +64,6 @@ class CartController extends Controller
                 $currentQty = $line ? (int) $line->quantity : 0;
                 $newQty     = $currentQty + $incoming;
 
-                // ✅ Stock check on combined qty
-                // if ($newQty > (int) $variant->stock) {
-                //     throw ValidationException::withMessages([
-                //         'quantity' => "Selected size is short in stock. Available: {$variant->stock}",
-                //     ]);
-                // }
-
                 if ($line) {
                     $line->quantity        = $newQty;
                     $line->subtotal        = round($price * $newQty, 2);
@@ -66,7 +71,7 @@ class CartController extends Controller
                     $line->save();
                 } else {
                     Cart::create([
-                        'session_id'      => $cartKey, // 👈 cookie key yahan save
+                        'session_id'      => $cartKey,
                         'product_id'      => $data['product_id'],
                         'size_id'         => $data['size_id'],
                         'product_size_id' => $variant->id,
@@ -79,7 +84,6 @@ class CartController extends Controller
             Alert::success('Success', 'Product added to cart successfully!');
             return back();
         } catch (ValidationException $e) {
-            // stock short — same page pe error dikhao
             throw $e;
         } catch (\Throwable $e) {
             Log::error('Add to Cart Error: ' . $e->getMessage());
@@ -88,32 +92,37 @@ class CartController extends Controller
         }
     }
 
-    public function update(Request $r)
+    /**
+     * Standard update for cart line item (fixed table name & session).
+     */
+    public function update(Request $request)
     {
-        $data = $r->validate([
-            'id'       => 'required|exists:cart,id',
+        $data = $request->validate([
+            'id'       => 'required|exists:carts,id',
             'quantity' => 'required|integer|min:1',
         ]);
 
+        $cartKey = $this->cartKey();
+
         $line = Cart::where('id', $data['id'])
-            ->where('session_id', $r->session()->getId())
+            ->where('session_id', $cartKey)
             ->firstOrFail();
 
-        $variant = $line->variant()->firstOrFail(); // product_sizes row
-                                                    // if ($variant->stock < $data['quantity']) {
-                                                    //     return back()->with('error', 'Not enough stock for this size.');
-                                                    // }
+        $variant = $line->variant()->firstOrFail();
 
         $line->quantity = (int) $data['quantity'];
-        $line->subtotal = $variant->price * $line->quantity; // recompute
+        $line->subtotal = round((float) $variant->price * $line->quantity, 2);
         $line->save();
 
         return back()->with('success', 'Cart updated.');
     }
 
+    /**
+     * Ajax remove cart line item and return updated totals.
+     */
     public function ajaxRemove(Request $request, $id)
     {
-        $cartKey = Cookie::get('cart_key') ?: $request->session()->getId();
+        $cartKey = $this->cartKey();
 
         $item = Cart::where('id', $id)
             ->where('session_id', $cartKey)
@@ -128,24 +137,37 @@ class CartController extends Controller
 
         $item->delete();
 
+        // Calculate updated totals for dynamic front-end updates
+        $remaining = Cart::where('session_id', $cartKey)->get(['quantity', 'subtotal']);
+        $subtotal  = (float) $remaining->sum('subtotal');
+        $shipping  = 0.0;
+        $grand     = $subtotal + $shipping;
+        $badge     = (int) $remaining->sum('quantity');
+
         return response()->json([
             'status'  => 'success',
             'message' => 'Product removed from cart successfully!',
+            'totals'  => [
+                'subtotal'   => number_format($subtotal, 2),
+                'shipping'   => number_format($shipping, 2),
+                'grand'      => number_format($grand, 2),
+                'badge'      => $badge,
+                'badge_text' => $badge > 99 ? '99+' : (string) $badge,
+            ],
         ], 200);
     }
 
+    /**
+     * Bulk add items (e.g. from category or accessories page).
+     */
     public function bulkAdd(Request $request)
     {
-        $items = $request->input('items', []); // items[product_id] = ['size_id'=>x, 'qty'=>y]
+        $items = $request->input('items', []);
         if (empty($items)) {
             return back()->with('error', 'Please select at least one product.');
         }
 
-        $cartKey = Cookie::get('cart_key') ?? (function () {
-            $k = (string) Str::uuid();
-            Cookie::queue(cookie('cart_key', $k, 60 * 24 * 90, null, null, false, true, false, 'Lax'));
-            return $k;
-        })();
+        $cartKey = $this->cartKey();
 
         DB::beginTransaction();
         try {
@@ -153,10 +175,11 @@ class CartController extends Controller
                 $sizeId = (int) ($row['size_id'] ?? 0);
                 $qty    = max(1, (int) ($row['qty'] ?? 1));
 
-                // validate variant exists
                 $variant = ProductSize::where('product_id', $productId)
-                    ->where('size_id', $sizeId)->first();
-                if (! $variant/*|| $variant->stock < $qty*/) {
+                    ->where('size_id', $sizeId)
+                    ->first();
+
+                if (! $variant) {
                     continue;
                 }
 
@@ -168,7 +191,7 @@ class CartController extends Controller
                 $price = (float) $variant->price;
                 if ($line) {
                     $line->quantity += $qty;
-                    $line->subtotal = $line->quantity * $price;
+                    $line->subtotal = round($line->quantity * $price, 2);
                     $line->save();
                 } else {
                     Cart::create([
@@ -177,7 +200,7 @@ class CartController extends Controller
                         'size_id'         => $sizeId,
                         'product_size_id' => $variant->id,
                         'quantity'        => $qty,
-                        'subtotal'        => $price * $qty,
+                        'subtotal'        => round($price * $qty, 2),
                     ]);
                 }
             }
@@ -185,38 +208,36 @@ class CartController extends Controller
             return back()->with('success', 'Selected products added to cart.');
         } catch (\Throwable $e) {
             DB::rollBack();
+            Log::error('Bulk Add Error: ' . $e->getMessage());
             return back()->with('error', 'Could not add items. Try again.');
         }
     }
 
+    /**
+     * Show Cart Details page.
+     */
     public function cartdetails(Request $request)
     {
-        // persistent key
-        $cartKey = Cookie::get('cart_key');
-        if (! $cartKey) {
-            $cartKey = (string) Str::uuid();
-            Cookie::queue(cookie('cart_key', $cartKey, 60 * 24 * 90, null, null, false, true, false, 'Lax'));
-        }
+        $cartKey = $this->cartKey();
 
-        // items + relations (image/name/size dikhane ke liye)
         $cartItems = Cart::with(['product.images', 'sizeItem', 'variant'])
             ->where('session_id', $cartKey)
             ->get();
 
-        // badge
-        $cartCount = (int) $cartItems->sum('quantity');
-
-        // ✅ totals: stored subtotal se
+        $cartCount  = (int) $cartItems->sum('quantity');
         $subtotal   = (float) $cartItems->sum('subtotal');
-        $shipping   = 0.0; // yahan apni shipping logic lagao
+        $shipping   = 0.0;
         $grandTotal = $subtotal + $shipping;
 
         return view('index.cart', compact('cartItems', 'cartCount', 'subtotal', 'shipping', 'grandTotal'));
     }
 
-    public function ajaxUpdateQuantity(Request $request, \App\Models\Cart $cart)
+    /**
+     * Ajax update quantity for a line item.
+     */
+    public function ajaxUpdateQuantity(Request $request, Cart $cart)
     {
-        $cartKey = Cookie::get('cart_key');
+        $cartKey = $this->cartKey();
         abort_unless($cart->session_id === $cartKey, 403);
 
         $qty   = max(1, (int) $request->input('quantity', 1));
@@ -227,8 +248,7 @@ class CartController extends Controller
             'subtotal' => round($price * $qty, 2),
         ]);
 
-        // ✅ totals from stored subtotals
-        $items    = \App\Models\Cart::where('session_id', $cartKey)->get(['quantity', 'subtotal']);
+        $items    = Cart::where('session_id', $cartKey)->get(['quantity', 'subtotal']);
         $subtotal = (float) $items->sum('subtotal');
         $shipping = 0.0;
         $grand    = $subtotal + $shipping;
@@ -251,87 +271,64 @@ class CartController extends Controller
         ]);
     }
 
+    /**
+     * Show Checkout page.
+     */
     public function checkout(Request $request)
     {
-        // persistent cart key
-        $cartKey = Cookie::get('cart_key');
-        if (! $cartKey) {
-            $cartKey = (string) Str::uuid();
-            Cookie::queue(cookie('cart_key', $cartKey, 60 * 24 * 90, null, null, false, true, false, 'Lax'));
-        }
+        $cartKey = $this->cartKey();
 
-        // items to show in summary (image/name/size/qty/price)
         $cartItems = Cart::with(['product.images', 'sizeItem', 'variant'])
             ->where('session_id', $cartKey)
             ->get();
 
-        // badge count
-        $cartCount = (int) $cartItems->sum('quantity');
-
-        // totals (stored per-line subtotal is most reliable)
-        $subtotal   = (float) $cartItems->sum('subtotal');
-        $shipping   = 0.0; // adjust if you have shipping rules
-        $grandTotal = $subtotal + $shipping;
-
-        // (optional) empty cart -> back to cart
         if ($cartItems->isEmpty()) {
             return redirect()->route('cartdetails')->with('error', 'Your cart is empty.');
         }
 
+        $cartCount  = (int) $cartItems->sum('quantity');
+        $subtotal   = (float) $cartItems->sum('subtotal');
+        $shipping   = 0.0;
+        $grandTotal = $subtotal + $shipping;
+
         return view('index.checkout', compact('cartItems', 'cartCount', 'subtotal', 'shipping', 'grandTotal'));
     }
 
-    private function cartKey(): string
-    {
-        $k = Cookie::get('cart_key');
-        if (! $k) {
-            $k = (string) Str::uuid();
-            Cookie::queue(cookie('cart_key', $k, 60 * 24 * 90, null, null, false, true, false, 'Lax'));
-        }
-        return $k;
-    }
-
-    // 4-digit unique order code generator
-    private function genOrderCode4(): string
-    {
-        return str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
-    }
-
+    /**
+     * Place order with Google reCAPTCHA verification and unique 4-digit order number.
+     */
     public function place(Request $request)
     {
-        // cookie MUST exist at checkout
-        $cartKey = Cookie::get('cart_key');
-        if (! $cartKey) {
-            return redirect()->route('cartdetails')
-                ->with('error', 'Your cart session expired. Please add items again.');
-        }
+        $cartKey = $this->cartKey();
 
         $fields = $request->validate([
-            'campus'       => 'required|string|in:Learning Alliance DHA,Learning Alliance International DHA,Learning Alliance Aziz Avenue,Learning Alliance Gulberg,Learning Alliance Faisalabad',
-            'parent_name'  => 'required|string|max:120|not_regex:/[\"\=\<\>]/',
-            'student_name' => 'required|string|max:120|not_regex:/[\"\=\<\>]/',
-            'class'        => 'nullable|string|max:50',
-            'section'      => 'nullable|string|max:50',
-            'phone'        => 'nullable|string|max:30',
-            'email'        => 'nullable|email|max:150',
+            'campus'               => 'required|string|in:Learning Alliance DHA,Learning Alliance International DHA,Learning Alliance Aziz Avenue,Learning Alliance Gulberg,Learning Alliance Faisalabad',
+            'parent_name'          => 'required|string|max:120|not_regex:/[\"\=\<\>]/',
+            'student_name'         => 'required|string|max:120|not_regex:/[\"\=\<\>]/',
+            'class'                => 'nullable|string|max:50',
+            'section'              => 'nullable|string|max:50',
+            'phone'                => 'nullable|string|max:30',
+            'email'                => 'nullable|email|max:150',
             'g-recaptcha-response' => 'required',
         ], [
             'g-recaptcha-response.required' => 'Please check the "I\'m not a robot" checkbox.',
         ]);
 
-        $recaptchaResponse = \Illuminate\Support\Facades\Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
-            'secret' => env('RECAPTCHA_SECRET_KEY'),
-            'response' => $request->input('g-recaptcha-response'),
-            'remoteip' => $request->ip()
-        ]);
+        $recaptchaSecret = config('services.recaptcha.secret_key') ?: env('RECAPTCHA_SECRET_KEY');
+        if ($recaptchaSecret) {
+            $recaptchaResponse = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+                'secret'   => $recaptchaSecret,
+                'response' => $request->input('g-recaptcha-response'),
+                'remoteip' => $request->ip(),
+            ]);
 
-        if (! $recaptchaResponse->json('success')) {
-            return back()->withErrors(['g-recaptcha-response' => 'reCAPTCHA verification failed, please try again.'])->withInput();
+            if (! $recaptchaResponse->json('success')) {
+                return back()->withErrors(['g-recaptcha-response' => 'reCAPTCHA verification failed, please try again.'])->withInput();
+            }
         }
 
         try {
             $order = DB::transaction(function () use ($fields, $cartKey) {
-                // snapshot + lock
                 $cartItems = Cart::with(['product', 'sizeItem', 'variant'])
                     ->where('session_id', $cartKey)
                     ->lockForUpdate()
@@ -342,15 +339,15 @@ class CartController extends Controller
                 }
 
                 $subtotal = (float) $cartItems->sum('subtotal');
-                $total    = $subtotal; // no shipping/tax for now
+                $total    = $subtotal;
 
-                // generate unique 4-digit order number
+                // Allocate a unique 4-digit code (table column length is 4 characters)
                 $order = null;
-                for ($i = 0; $i < 25; $i++) {
+                for ($i = 0; $i < 30; $i++) {
                     $code = str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
                     try {
                         $order = Order::create([
-                            'order_number'   => $code, // ← only 4 digits
+                            'order_number'   => $code,
                             'cart_key'       => $cartKey,
                             'campus'         => $fields['campus'],
                             'parent_name'    => $fields['parent_name'],
@@ -366,29 +363,20 @@ class CartController extends Controller
                         ]);
                         break;
                     } catch (QueryException $e) {
-                        // 23000 = unique violation → retry
                         if ($e->getCode() !== '23000') {
                             throw $e;
                         }
-
                     }
                 }
+
                 if (! $order) {
-                    throw new \RuntimeException('Could not allocate order number, please retry.');
+                    throw new \RuntimeException('Could not allocate unique order number, please retry.');
                 }
 
-                // items + optional stock decrement
+                // Create Order Items
                 foreach ($cartItems as $line) {
-                    $p = $line->product;
-                    $v = $line->variant;
-
-                    // if ($v && $v->stock !== null) {
-                    //     if ((int) $line->quantity > (int) $v->stock) {
-                    //         throw new \RuntimeException("Stock changed for {$p->name}, please update cart.");
-                    //     }
-                    //     $v->decrement('stock', (int) $line->quantity);
-                    // }
-
+                    $p    = $line->product;
+                    $v    = $line->variant;
                     $unit = (float) ($v->price ?? 0);
 
                     OrderItem::create([
@@ -403,7 +391,7 @@ class CartController extends Controller
                     ]);
                 }
 
-                // clear cart for this key
+                // Clear cart for this key
                 Cart::where('session_id', $cartKey)->delete();
 
                 return $order;
